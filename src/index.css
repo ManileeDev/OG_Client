@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #0c0f0d;
+  --color-panel: #141815;
+  --color-panel-2: #1d221e;
+  --color-edge: #2a302b;
+  --color-ink: #e8ece8;
+  --color-ink-dim: #98a29a;
+  --color-accent: #a3e635;
+  --color-primary: #a3e635;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+  --font-display: "Georgia", "Times New Roman", serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+/* Light theme: same tokens, different values (toggled via .light on <html>) */
+:root.light {
+  color-scheme: light;
+  --color-surface: #f2f4f0;
+  --color-panel: #ffffff;
+  --color-panel-2: #eaeee7;
+  --color-edge: #d8dfd4;
+  --color-ink: #171c17;
+  --color-ink-dim: #5c665d;
+  --color-accent: #4d7c0f;
+  --color-primary: #84cc16;
+  --color-danger: #dc2626;
+  --color-success: #15803d;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Slim, theme-aware scrollbars everywhere */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-edge) transparent;
+}
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Printable invoice: the app (#root) and modals collapse to nothing;
+   only the print-only portal (#invoice-print, print:block) remains in flow. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  body {
+    overflow: visible !important;
+    background: white !important;
+  }
+  #root {
+    display: none !important;
+  }
+}

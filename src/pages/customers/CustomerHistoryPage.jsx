@@ -1,0 +1,132 @@
+import { useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft, ShoppingBag, Wallet, TrendingUp, CalendarDays, Eye } from 'lucide-react'
+import { apiGet } from '../../api/client'
+import { formatDate, formatINR } from '../../lib/format'
+import PageHeader from '../../components/PageHeader'
+import StatCard from '../../components/StatCard'
+import DataTable from '../../components/DataTable'
+import InvoicePrintModal from '../billing/InvoicePrintModal'
+
+export default function CustomerHistoryPage() {
+  const { customerId } = useParams()
+  const [viewing, setViewing] = useState(null)
+
+  const { data: customer, isLoading: customerLoading, error: customerError } = useQuery({
+    queryKey: ['customer', customerId],
+    queryFn: () => apiGet(`/customers/${customerId}`),
+  })
+
+  const { data: invoices = [], isLoading: invoicesLoading } = useQuery({
+    queryKey: ['customer-invoices', customerId],
+    queryFn: () => apiGet(`/customers/${customerId}/invoices`),
+  })
+
+  const columns = [
+    {
+      header: 'Invoice',
+      cell: (inv) => <span className="font-mono font-medium">{inv.invoiceNumber}</span>,
+    },
+    { header: 'Date', cell: (inv) => formatDate(inv.createdAt), className: 'text-ink-dim' },
+    {
+      header: 'Items',
+      cell: (inv) => (
+        <div>
+          <div>{inv.items.reduce((sum, item) => sum + item.qty, 0)} pcs</div>
+          <div className="mt-0.5 max-w-56 truncate text-xs text-ink-dim">
+            {inv.items.map((item) => item.name).join(', ')}
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Discounts',
+      cell: (inv) => {
+        const parts = []
+        if (inv.coupon) parts.push(`${inv.coupon.code} −${formatINR(inv.coupon.discountAmount)}`)
+        if (inv.manualDiscountAmount > 0)
+          parts.push(`${inv.manualDiscountPercent}% −${formatINR(inv.manualDiscountAmount)}`)
+        return parts.length ? (
+          <span className="text-accent">{parts.join(' · ')}</span>
+        ) : (
+          <span className="text-ink-dim">—</span>
+        )
+      },
+    },
+    { header: 'Total', cell: (inv) => <span className="font-semibold">{formatINR(inv.total)}</span> },
+    {
+      header: '',
+      cell: (inv) => (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setViewing(inv)}
+            className="flex items-center gap-1.5 rounded-lg border border-edge px-3 py-1.5 text-xs text-ink-dim hover:border-accent hover:text-accent"
+          >
+            <Eye size={13} /> View
+          </button>
+        </div>
+      ),
+    },
+  ]
+
+  if (customerError) {
+    return (
+      <div className="mx-auto max-w-6xl">
+        <Link to="/customers" className="mb-4 inline-flex items-center gap-2 text-sm text-ink-dim hover:text-accent">
+          <ArrowLeft size={15} /> Back to customers
+        </Link>
+        <div className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
+          {customerError.message}
+        </div>
+      </div>
+    )
+  }
+
+  const aov = customer && customer.orders > 0 ? customer.totalSpent / customer.orders : 0
+
+  return (
+    <div className="mx-auto max-w-6xl">
+      <Link
+        to="/customers"
+        className="mb-4 inline-flex items-center gap-2 text-sm text-ink-dim hover:text-accent"
+      >
+        <ArrowLeft size={15} /> Back to customers
+      </Link>
+
+      <PageHeader
+        kicker="Purchase History"
+        title={customer?.name ?? '…'}
+        subtitle={
+          customer
+            ? `${customer.phone}${customer.email ? ` · ${customer.email}` : ''} · customer since their first bill`
+            : undefined
+        }
+      />
+
+      <div className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <StatCard icon={ShoppingBag} label="Total Orders" value={customer?.orders ?? 0} tone="amber" loading={customerLoading} />
+        <StatCard icon={Wallet} label="Total Spent" value={formatINR(customer?.totalSpent)} tone="teal" loading={customerLoading} />
+        <StatCard icon={TrendingUp} label="Avg. Order Value" value={formatINR(aov)} tone="violet" loading={customerLoading} />
+        <StatCard icon={CalendarDays} label="Last Purchase" value={formatDate(customer?.lastPurchase)} tone="pink" loading={customerLoading} />
+      </div>
+
+      <DataTable
+        columns={columns}
+        rows={invoices}
+        rowKey={(inv) => inv.id}
+        loading={invoicesLoading}
+        emptyMessage="No invoices recorded yet — history builds up as sales are billed here."
+      />
+
+      {invoices.length > 0 && invoices.length < (customer?.orders ?? 0) && (
+        <p className="mt-3 text-xs text-ink-dim">
+          Showing {invoices.length} recorded invoice{invoices.length === 1 ? '' : 's'} — earlier
+          orders predate invoice tracking.
+        </p>
+      )}
+
+      {viewing && <InvoicePrintModal invoice={viewing} isNew={false} onClose={() => setViewing(null)} />}
+    </div>
+  )
+}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OG Clothing — Menswear</title>
+    <script>
+      // Apply saved theme before first paint to avoid a flash.
+      // ?theme=light|dark in the URL overrides and persists.
+      const forced = new URLSearchParams(location.search).get('theme')
+      if (forced === 'light' || forced === 'dark') {
+        localStorage.setItem('og-theme', forced)
+      }
+      if (localStorage.getItem('og-theme') === 'light') {
+        document.documentElement.classList.add('light')
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
