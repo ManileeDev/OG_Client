@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { UserCheck } from 'lucide-react'
 import { apiGet } from '../../api/client'
-import { emailError, phoneError } from '../../lib/validate'
+import { emailError, nameError, phoneError } from '../../lib/validate'
 
 const FIELD =
   'w-full rounded-lg border bg-panel-2 px-3 py-2.5 text-sm placeholder:text-ink-dim focus:outline-none disabled:cursor-not-allowed disabled:opacity-60'
@@ -11,11 +11,12 @@ const LABEL = 'mb-1.5 block text-xs font-medium text-ink-dim'
 
 export default function CustomerForm({ customer, onChange }) {
   const [existing, setExisting] = useState(null) // matched customer record | null
-  const [touched, setTouched] = useState({ phone: false, email: false })
+  const [touched, setTouched] = useState({ phone: false, name: false, email: false })
   const lookedUp = useRef('')
 
   // Validate once the cashier leaves the field (or the value is long enough to judge)
   const phoneMsg = (touched.phone || customer.phone.length === 10) ? phoneError(customer.phone) : null
+  const nameMsg = touched.name && !existing ? nameError(customer.name) : null
   const emailMsg = touched.email && !existing ? emailError(customer.email) : null
 
   useEffect(() => {
@@ -92,10 +93,12 @@ export default function CustomerForm({ customer, onChange }) {
           <input
             value={customer.name}
             onChange={(e) => onChange((c) => ({ ...c, name: e.target.value }))}
+            onBlur={() => setTouched((t) => ({ ...t, name: true }))}
             placeholder="Customer name"
             disabled={!!existing}
-            className={`${FIELD} ${OK_BORDER}`}
+            className={`${FIELD} ${nameMsg ? BAD_BORDER : OK_BORDER}`}
           />
+          {nameMsg && <p className="mt-1.5 text-xs text-danger">{nameMsg}</p>}
         </div>
         <div>
           <label className={LABEL}>Email (optional)</label>

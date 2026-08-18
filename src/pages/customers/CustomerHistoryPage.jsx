@@ -7,13 +7,14 @@ import { formatDate, formatINR } from '../../lib/format'
 import PageHeader from '../../components/PageHeader'
 import StatCard from '../../components/StatCard'
 import DataTable from '../../components/DataTable'
+import ErrorState from '../../components/ErrorState'
 import InvoicePrintModal from '../billing/InvoicePrintModal'
 
 export default function CustomerHistoryPage() {
   const { customerId } = useParams()
   const [viewing, setViewing] = useState(null)
 
-  const { data: customer, isLoading: customerLoading, error: customerError } = useQuery({
+  const { data: customer, isLoading: customerLoading, error: customerError, refetch } = useQuery({
     queryKey: ['customer', customerId],
     queryFn: () => apiGet(`/customers/${customerId}`),
   })
@@ -76,9 +77,7 @@ export default function CustomerHistoryPage() {
         <Link to="/customers" className="mb-4 inline-flex items-center gap-2 text-sm text-ink-dim hover:text-accent">
           <ArrowLeft size={15} /> Back to customers
         </Link>
-        <div className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
-          {customerError.message}
-        </div>
+        <ErrorState error={customerError} onRetry={refetch} />
       </div>
     )
   }

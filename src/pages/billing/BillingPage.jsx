@@ -6,6 +6,7 @@ import PageHeader from '../../components/PageHeader'
 import ProductPicker from './ProductPicker'
 import CustomerForm from './CustomerForm'
 import CartSummary from './CartSummary'
+import PaymentModal from './PaymentModal'
 import InvoicePrintModal from './InvoicePrintModal'
 
 export default function BillingPage() {
@@ -22,6 +23,7 @@ export default function BillingPage() {
     resetSale,
   } = useBilling()
   const [invoice, setInvoice] = useState(null)
+  const [checkoutTotal, setCheckoutTotal] = useState(null) // non-null → payment step open
 
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ['products'],
@@ -65,11 +67,17 @@ export default function BillingPage() {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
       queryClient.invalidateQueries({ queryKey: ['coupons'] })
       resetSale()
+      setCheckoutTotal(null)
       setInvoice(created)
     },
   })
 
-  const generateInvoice = () => {
+  const startPayment = (total) => {
+    generateMutation.reset()
+    setCheckoutTotal(total)
+  }
+
+  const generateInvoice = (payment) => {
     generateMutation.mutate({
       customer: {
         phone: customer.phone,
@@ -79,6 +87,7 @@ export default function BillingPage() {
       items: cart.map((l) => ({ productId: l.product.id, qty: l.qty })),
       couponCode: appliedCoupon?.code ?? null,
       manualDiscountPercent: Number(manualDiscount || 0),
+      payment,
     })
   }
 
@@ -105,13 +114,20 @@ export default function BillingPage() {
             customer={customer}
             onSetQty={setQty}
             onRemove={removeLine}
-            onGenerate={generateInvoice}
-            generating={generateMutation.isPending}
-            generateError={generateMutation.error}
+            onProceed={startPayment}
           />
         </div>
       </div>
 
+      {checkoutTotal !== null && (
+        <PaymentModal
+          total={checkoutTotal}
+          onConfirm={generateInvoice}
+          onClose={() => setCheckoutTotal(null)}
+          busy={generateMutation.isPending}
+          error={generateMutation.error}
+        />
+      )}
       {invoice && <InvoicePrintModal invoice={invoice} onClose={() => setInvoice(null)} />}
     </div>
   )

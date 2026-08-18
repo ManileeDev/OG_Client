@@ -8,6 +8,7 @@ import DataTable from '../../components/DataTable'
 import StatusBadge from '../../components/StatusBadge'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import CopyButton from '../../components/CopyButton'
+import ErrorState from '../../components/ErrorState'
 import CouponFormModal from './CouponFormModal'
 
 export default function CouponsPage() {
@@ -15,7 +16,7 @@ export default function CouponsPage() {
   const [editing, setEditing] = useState(null) // null | 'new' | coupon
   const [deleting, setDeleting] = useState(null)
 
-  const { data: coupons = [], isLoading, error } = useQuery({
+  const { data: coupons = [], isLoading, error, refetch } = useQuery({
     queryKey: ['coupons'],
     queryFn: () => apiGet('/coupons'),
   })
@@ -107,9 +108,7 @@ export default function CouponsPage() {
       />
 
       {error ? (
-        <div className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
-          Could not load coupons: {error.message}
-        </div>
+        <ErrorState error={error} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}

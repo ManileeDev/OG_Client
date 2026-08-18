@@ -3,6 +3,8 @@ import { Printer, CheckCircle2, MessageCircle } from 'lucide-react'
 import Modal from '../../components/Modal'
 import { formatDate, formatINR } from '../../lib/format'
 
+const MODE_LABEL = { cash: 'Cash', upi: 'UPI', card: 'Card' }
+
 function whatsAppUrl(invoice) {
   const lines = [
     `*OG Clothing — Invoice ${invoice.invoiceNumber}*`,
@@ -24,6 +26,16 @@ function whatsAppUrl(invoice) {
       : []),
     `GST (5%): ${formatINR(invoice.gstAmount)}`,
     `*Total: ${formatINR(invoice.total)}*`,
+    ...(invoice.payment
+      ? [
+          `Paid via ${MODE_LABEL[invoice.payment.mode]}${invoice.payment.reference ? ` (${invoice.payment.reference})` : ''}`,
+          ...(invoice.payment.mode === 'cash' && invoice.payment.amountTendered != null
+            ? [
+                `Cash received: ${formatINR(invoice.payment.amountTendered)} · Change: ${formatINR(invoice.payment.changeReturned)}`,
+              ]
+            : []),
+        ]
+      : []),
     '',
     'See you again soon! 🛍️',
   ]
@@ -111,6 +123,29 @@ function InvoiceContent({ invoice }) {
             <span>Total</span>
             <span>{formatINR(invoice.total)}</span>
           </div>
+          {invoice.payment && (
+            <>
+              <div className="flex justify-between border-t border-gray-200 py-1 pt-2">
+                <span className="text-gray-600">Paid via</span>
+                <span>
+                  {MODE_LABEL[invoice.payment.mode]}
+                  {invoice.payment.reference ? ` · ${invoice.payment.reference}` : ''}
+                </span>
+              </div>
+              {invoice.payment.mode === 'cash' && invoice.payment.amountTendered != null && (
+                <>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-600">Cash Received</span>
+                    <span>{formatINR(invoice.payment.amountTendered)}</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-600">Change Returned</span>
+                    <span>{formatINR(invoice.payment.changeReturned)}</span>
+                  </div>
+                </>
+              )}
+            </>
+          )}
         </div>
 
         <div className="mt-6 border-t border-gray-300 pt-3 text-center text-xs text-gray-500">

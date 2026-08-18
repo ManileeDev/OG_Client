@@ -12,7 +12,10 @@ export default function ThemeToggle({ withLabel = false }) {
   return (
     <button
       onClick={() => setLight((l) => !l)}
-      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-dim transition-colors hover:bg-panel-2 hover:text-ink"
+      className={[
+        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-dim transition-colors hover:bg-panel-2 hover:text-ink',
+        withLabel ? 'w-full' : '',
+      ].join(' ')}
       aria-label={light ? 'Switch to dark mode' : 'Switch to light mode'}
       title={light ? 'Switch to dark mode' : 'Switch to light mode'}
     >

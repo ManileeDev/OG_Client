@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Minus, Plus, Trash2, FileText } from 'lucide-react'
+import { Minus, Plus, Trash2, Wallet } from 'lucide-react'
 import { apiPost } from '../../api/client'
 import { formatINR } from '../../lib/format'
-import { isValidEmail, isValidPhone } from '../../lib/validate'
+import { isValidEmail, isValidName, isValidPhone } from '../../lib/validate'
 
 const GST_RATE = 0.05
 
@@ -16,9 +16,7 @@ export default function CartSummary({
   customer,
   onSetQty,
   onRemove,
-  onGenerate,
-  generating,
-  generateError,
+  onProceed,
 }) {
   const [couponInput, setCouponInput] = useState('')
   const [couponError, setCouponError] = useState(null)
@@ -69,7 +67,7 @@ export default function CartSummary({
   const canGenerate =
     cart.length > 0 &&
     isValidPhone(customer.phone) &&
-    customer.name.trim().length > 0 &&
+    isValidName(customer.name) &&
     isValidEmail(customer.email)
 
   return (
@@ -207,19 +205,13 @@ export default function CartSummary({
           </div>
         </dl>
 
-        {generateError && (
-          <div className="mt-4 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
-            {generateError.message}
-          </div>
-        )}
-
         <button
-          onClick={onGenerate}
-          disabled={!canGenerate || generating}
+          onClick={() => onProceed(total)}
+          disabled={!canGenerate}
           className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <FileText size={16} />
-          {generating ? 'Generating…' : 'Generate Invoice'}
+          <Wallet size={16} />
+          Proceed to Payment
         </button>
       </div>
     </section>

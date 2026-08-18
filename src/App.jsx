@@ -6,6 +6,7 @@ import InventoryPage from './pages/inventory/InventoryPage'
 import CustomersPage from './pages/customers/CustomersPage'
 import CustomerHistoryPage from './pages/customers/CustomerHistoryPage'
 import CouponsPage from './pages/coupons/CouponsPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 const router = createBrowserRouter([
   {
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
       { path: 'customers', element: <CustomersPage /> },
       { path: 'customers/:customerId', element: <CustomerHistoryPage /> },
       { path: 'coupons', element: <CouponsPage /> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ])

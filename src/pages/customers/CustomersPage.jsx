@@ -8,10 +8,11 @@ import PageHeader from '../../components/PageHeader'
 import StatCard from '../../components/StatCard'
 import SearchInput from '../../components/SearchInput'
 import DataTable from '../../components/DataTable'
+import ErrorState from '../../components/ErrorState'
 
 export default function CustomersPage() {
   const [search, setSearch] = useState('')
-  const { data: customers = [], isLoading, error } = useQuery({
+  const { data: customers = [], isLoading, error, refetch } = useQuery({
     queryKey: ['customers'],
     queryFn: () => apiGet('/customers'),
   })
@@ -81,9 +82,7 @@ export default function CustomersPage() {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
-          Could not load customers: {error.message}
-        </div>
+        <ErrorState error={error} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}

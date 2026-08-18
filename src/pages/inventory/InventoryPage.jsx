@@ -9,6 +9,7 @@ import SearchInput from '../../components/SearchInput'
 import DataTable from '../../components/DataTable'
 import StatusBadge from '../../components/StatusBadge'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import ErrorState from '../../components/ErrorState'
 import ProductFormModal from './ProductFormModal'
 
 function stockStatus(stock) {
@@ -23,7 +24,7 @@ export default function InventoryPage() {
   const [editing, setEditing] = useState(null) // null | 'new' | product
   const [deleting, setDeleting] = useState(null)
 
-  const { data: products = [], isLoading, error } = useQuery({
+  const { data: products = [], isLoading, error, refetch } = useQuery({
     queryKey: ['products'],
     queryFn: () => apiGet('/products'),
   })
@@ -129,9 +130,7 @@ export default function InventoryPage() {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
-          Could not load products: {error.message}
-        </div>
+        <ErrorState error={error} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}

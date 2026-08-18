@@ -1,10 +1,23 @@
 export const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
+export class ApiError extends Error {
+  constructor(message, status) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status // HTTP status; 0 means the server was unreachable
+  }
+}
+
 async function request(path, options = {}) {
-  const res = await fetch(`${API}/api${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  })
+  let res
+  try {
+    res = await fetch(`${API}/api${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    })
+  } catch {
+    throw new ApiError('Could not reach the server', 0)
+  }
   if (!res.ok) {
     let detail = `Request failed (${res.status})`
     try {
@@ -14,7 +27,7 @@ async function request(path, options = {}) {
     } catch {
       /* non-JSON error body */
     }
-    throw new Error(detail)
+    throw new ApiError(detail, res.status)
   }
   if (res.status === 204) return null
   return res.json()
