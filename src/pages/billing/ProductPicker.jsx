@@ -94,10 +94,10 @@ export default function ProductPicker({ products, loading = false, cartQty, onAd
                     <CategoryDoodle category={g.category} size={20} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-medium leading-tight" title={g.name}>
+                    <div className="truncate text-base font-medium leading-tight lg:text-xs" title={g.name}>
                       {g.name}
                     </div>
-                    <div className="mt-0.5 truncate text-[11px] text-ink-dim">
+                    <div className="mt-1 truncate text-[13px] text-ink-dim lg:mt-0.5 lg:text-[11px]">
                       {[g.sku, g.colour, g.category].filter(Boolean).join(' · ')}
                     </div>
                   </div>
@@ -108,7 +108,7 @@ export default function ProductPicker({ products, loading = false, cartQty, onAd
                   )}
                 </div>
 
-                <div className="mt-2.5 flex flex-wrap gap-1">
+                <div className="mt-2.5 flex flex-wrap gap-1.5 lg:gap-1">
                   {g.variants.map((v) => {
                     const inCart = cartQty(v.id)
                     const left = v.stock - inCart
@@ -116,25 +116,25 @@ export default function ProductPicker({ products, loading = false, cartQty, onAd
                     return inCart > 0 ? (
                       <div
                         key={v.id}
-                        className="flex h-5 items-center overflow-hidden rounded border border-accent/60 bg-accent/10 text-accent"
+                        className="flex h-7 items-center overflow-hidden rounded-md border border-accent/60 bg-accent/10 text-accent lg:h-5 lg:rounded"
                       >
                         <button
                           onClick={() => onSetQty(v.id, inCart - 1)}
-                          className="flex h-full items-center px-1 hover:bg-accent/20"
+                          className="flex h-full items-center px-1.5 hover:bg-accent/20 lg:px-1"
                           aria-label={`Remove one ${g.name} size ${v.size}`}
                         >
-                          <Minus size={10} />
+                          <Minus size={11} />
                         </button>
-                        <span className="text-[10px] font-semibold">
+                        <span className="text-xs font-semibold lg:text-[10px]">
                           {v.size} · {inCart}
                         </span>
                         <button
                           onClick={() => onAdd(v)}
                           disabled={left <= 0}
-                          className="flex h-full items-center px-1 hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-35"
+                          className="flex h-full items-center px-1.5 hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-35 lg:px-1"
                           aria-label={`Add one more ${g.name} size ${v.size}`}
                         >
-                          <Plus size={10} />
+                          <Plus size={11} />
                         </button>
                       </div>
                     ) : (
@@ -142,7 +142,7 @@ export default function ProductPicker({ products, loading = false, cartQty, onAd
                         key={v.id}
                         onClick={() => onAdd(v)}
                         disabled={left <= 0}
-                        className="h-5 rounded border border-edge bg-panel-2/60 px-1 text-[10px] font-medium transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-35"
+                        className="h-7 rounded-md border border-edge bg-panel-2/60 px-2 text-xs font-medium transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-35 lg:h-5 lg:rounded lg:px-1 lg:text-[10px]"
                         aria-label={`Add ${g.name} size ${v.size} to cart`}
                         title={left <= 0 ? 'No stock left' : `${left} available`}
                       >
