@@ -14,7 +14,7 @@ export default function ConfirmDialog({ title, message, confirmLabel = 'Delete',
         <button
           onClick={onConfirm}
           disabled={busy}
-          className="rounded-lg bg-danger px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
+          className="rounded-lg bg-danger px-4 py-2 text-sm font-semibold text-btn-ink hover:opacity-90 disabled:opacity-50"
         >
           {busy ? 'Deleting…' : confirmLabel}
         </button>

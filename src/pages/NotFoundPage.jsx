@@ -11,7 +11,7 @@ export default function NotFoundPage() {
         action={
           <Link
             to="/"
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-black hover:opacity-90"
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-btn-ink hover:opacity-90"
           >
             <ArrowLeft size={15} /> Back to Billing
           </Link>

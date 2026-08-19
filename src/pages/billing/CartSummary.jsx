@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Minus, Plus, Trash2, Wallet } from 'lucide-react'
-import { apiPost } from '../../api/client'
+import { apiGet, apiPost } from '../../api/client'
 import { formatINR } from '../../lib/format'
 import { isValidEmail, isValidName, isValidPhone } from '../../lib/validate'
+import Select from '../../components/Select'
 
-const GST_RATE = 0.05
+function couponLabel(c) {
+  const discount = c.type === 'percent' ? `${c.value}% off` : `${formatINR(c.value)} off`
+  const min = c.minPurchase > 0 ? ` · min ${formatINR(c.minPurchase)}` : ''
+  return `${c.code} · ${discount}${min}`
+}
 
 export default function CartSummary({
   cart,
@@ -16,11 +22,19 @@ export default function CartSummary({
   customer,
   onSetQty,
   onRemove,
+  onClear,
+  gstEnabled,
+  onGstChange,
   onProceed,
 }) {
-  const [couponInput, setCouponInput] = useState('')
   const [couponError, setCouponError] = useState(null)
   const [applying, setApplying] = useState(false)
+
+  const { data: allCoupons = [] } = useQuery({
+    queryKey: ['coupons'],
+    queryFn: () => apiGet('/coupons'),
+  })
+  const activeCoupons = allCoupons.filter((c) => c.status === 'active')
 
   // Re-validate the applied coupon whenever the subtotal changes
   useEffect(() => {
@@ -38,17 +52,12 @@ export default function CartSummary({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subtotal])
 
-  const applyCoupon = async () => {
-    if (!couponInput.trim()) return
+  const applyCoupon = async (code) => {
     setApplying(true)
     setCouponError(null)
     try {
-      const coupon = await apiPost('/coupons/validate', {
-        code: couponInput.trim().toUpperCase(),
-        subtotal,
-      })
+      const coupon = await apiPost('/coupons/validate', { code, subtotal })
       onCouponChange(coupon)
-      setCouponInput('')
     } catch (err) {
       setCouponError(err.message)
     } finally {
@@ -60,9 +69,8 @@ export default function CartSummary({
   const afterCoupon = subtotal - couponAmount
   const manualPct = Math.min(Math.max(Number(manualDiscount || 0), 0), 100)
   const manualAmount = Math.round(afterCoupon * manualPct) / 100
-  const taxable = afterCoupon - manualAmount
-  const gst = Math.round(taxable * GST_RATE * 100) / 100
-  const total = Math.round((taxable + gst) * 100) / 100
+  // Prices are inclusive of all taxes; the discounted amount is the final total
+  const total = Math.round((afterCoupon - manualAmount) * 100) / 100
 
   const canGenerate =
     cart.length > 0 &&
@@ -72,10 +80,18 @@ export default function CartSummary({
 
   return (
     <section className="rounded-xl border border-edge bg-panel">
-      <div className="border-b border-edge px-5 py-4">
+      <div className="flex items-center justify-between border-b border-edge px-5 py-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-dim">
           Cart Summary
         </h2>
+        {cart.length > 0 && (
+          <button
+            onClick={onClear}
+            className="flex items-center gap-1.5 text-xs text-ink-dim hover:text-danger"
+          >
+            <Trash2 size={13} /> Clear all
+          </button>
+        )}
       </div>
 
       <div className="p-5">
@@ -88,9 +104,11 @@ export default function CartSummary({
             {cart.map(({ product, qty }) => (
               <li key={product.id} className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{product.name}</div>
+                  <div className="truncate text-sm font-medium" title={product.name}>
+                    {product.name}
+                  </div>
                   <div className="mt-0.5 text-xs text-ink-dim">
-                    {product.size} · {product.colour}
+                    {[product.size, product.colour].filter(Boolean).join(' · ')}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 rounded-lg border border-edge">
@@ -139,25 +157,21 @@ export default function CartSummary({
               </button>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <input
-                value={couponInput}
-                onChange={(e) => {
-                  setCouponInput(e.target.value)
-                  setCouponError(null)
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && applyCoupon()}
-                placeholder="Have a coupon code?"
-                className="min-w-0 flex-1 rounded-lg border border-edge bg-panel-2 px-3 py-2.5 font-mono text-sm uppercase placeholder:font-sans placeholder:normal-case placeholder:text-ink-dim focus:border-accent focus:outline-none"
-              />
-              <button
-                onClick={applyCoupon}
-                disabled={applying || cart.length === 0}
-                className="rounded-lg border border-edge bg-panel-2 px-4 py-2.5 text-sm font-medium hover:border-accent hover:text-accent disabled:opacity-50"
-              >
-                {applying ? '…' : 'Apply'}
-              </button>
-            </div>
+            <Select
+              value=""
+              onChange={applyCoupon}
+              options={activeCoupons.map((c) => ({ value: c.code, label: couponLabel(c) }))}
+              placeholder={
+                applying
+                  ? 'Checking…'
+                  : activeCoupons.length
+                    ? 'Apply a coupon (optional)'
+                    : 'No active coupons'
+              }
+              disabled={applying || cart.length === 0 || activeCoupons.length === 0}
+              buttonClassName="bg-panel-2"
+              ariaLabel="Apply a coupon"
+            />
           )}
           {couponError && <p className="mt-2 text-xs text-danger">{couponError}</p>}
 
@@ -175,6 +189,26 @@ export default function CartSummary({
               placeholder="0"
               className="w-full rounded-lg border border-edge bg-panel-2 px-3 py-2.5 text-sm placeholder:text-ink-dim focus:border-accent focus:outline-none"
             />
+          </div>
+
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-xs font-medium text-ink-dim">GST (included in prices)</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={gstEnabled}
+              aria-label="Toggle GST"
+              onClick={() => onGstChange(!gstEnabled)}
+              className={`relative h-6 w-11 rounded-full transition-colors ${
+                gstEnabled ? 'bg-primary' : 'border border-edge bg-panel-2'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full transition-all ${
+                  gstEnabled ? 'left-[22px] bg-btn-ink' : 'left-0.5 bg-ink-dim'
+                }`}
+              />
+            </button>
           </div>
         </div>
 
@@ -195,20 +229,19 @@ export default function CartSummary({
               <dd>−{formatINR(manualAmount)}</dd>
             </div>
           )}
-          <div className="flex justify-between">
-            <dt className="font-sans text-ink-dim">GST (5%)</dt>
-            <dd>{formatINR(gst)}</dd>
-          </div>
           <div className="mt-1 flex justify-between border-t border-edge pt-3 text-base">
             <dt className="font-sans font-bold">Total</dt>
             <dd className="font-bold text-primary">{formatINR(total)}</dd>
           </div>
+          {gstEnabled && (
+            <div className="text-right font-sans text-xs text-ink-dim">Inclusive of all taxes</div>
+          )}
         </dl>
 
         <button
           onClick={() => onProceed(total)}
           disabled={!canGenerate}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-semibold text-btn-ink hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Wallet size={16} />
           Proceed to Payment

@@ -4,13 +4,16 @@
   --color-surface: #0c0f0d;
   --color-panel: #141815;
   --color-panel-2: #1d221e;
-  --color-edge: #2a302b;
+  --color-edge: #3b443d;
   --color-ink: #e8ece8;
   --color-ink-dim: #98a29a;
   --color-accent: #a3e635;
   --color-primary: #a3e635;
   --color-danger: #f87171;
   --color-success: #4ade80;
+  /* Text colour on primary/accent CTAs — flips in palettes with dark buttons */
+  --color-btn-ink: #000000;
+  --color-whatsapp: #25d366;
   --font-display: "Georgia", "Times New Roman", serif;
 }
 
@@ -33,6 +36,53 @@
   --color-success: #15803d;
 }
 
+/* Black & white palette (toggled via .mono on <html>), composes with .light.
+   Danger/success stay coloured — they carry meaning. Decorative stat tones
+   (teal/violet/pink) are neutralised to greys. */
+:root.mono {
+  --color-surface: #0a0a0a;
+  --color-panel: #141414;
+  --color-panel-2: #1f1f1f;
+  --color-edge: #414141;
+  --color-ink: #f2f2f2;
+  --color-ink-dim: #9c9c9c;
+  --color-accent: #ffffff;
+  --color-primary: #ffffff;
+  /* Functional tones go greyscale too: shades keep the states distinguishable */
+  --color-success: #d6d6d6;
+  --color-orange-400: #9c9c9c;
+  --color-danger: #ffffff;
+  --color-whatsapp: #ffffff;
+  --color-teal-300: #d4d4d4;
+  --color-teal-400: #9c9c9c;
+  --color-violet-300: #d4d4d4;
+  --color-violet-400: #9c9c9c;
+  --color-pink-300: #d4d4d4;
+  --color-pink-400: #9c9c9c;
+}
+
+:root.mono.light {
+  --color-surface: #f4f4f4;
+  --color-panel: #ffffff;
+  --color-panel-2: #ececec;
+  --color-edge: #dcdcdc;
+  --color-ink: #111111;
+  --color-ink-dim: #636363;
+  --color-accent: #111111;
+  --color-primary: #171717;
+  --color-btn-ink: #ffffff;
+  --color-success: #4a4a4a;
+  --color-orange-400: #7a7a7a;
+  --color-danger: #111111;
+  --color-whatsapp: #171717;
+  --color-teal-300: #525252;
+  --color-teal-400: #737373;
+  --color-violet-300: #525252;
+  --color-violet-400: #737373;
+  --color-pink-300: #525252;
+  --color-pink-400: #737373;
+}
+
 body {
   background-color: var(--color-surface);
   color: var(--color-ink);
@@ -43,6 +93,16 @@ body {
 html {
   scrollbar-width: thin;
   scrollbar-color: var(--color-edge) transparent;
+}
+
+/* Mobile checkout drawer slide-in (used via animate-[drawer-in_...]) */
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 /* Hide number input spinners */

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiPost, apiPut } from '../../api/client'
 import Modal from '../../components/Modal'
+import Select from '../../components/Select'
 
 const FIELD =
   'w-full rounded-lg border border-edge bg-panel px-3 py-2.5 text-sm placeholder:text-ink-dim focus:border-accent focus:outline-none'
@@ -48,10 +49,15 @@ export default function CouponFormModal({ coupon, onClose }) {
         </div>
         <div>
           <label className={LABEL}>Discount type</label>
-          <select value={form.type} onChange={set('type')} className={FIELD}>
-            <option value="percent">Percent (%) off</option>
-            <option value="flat">Flat (₹) off</option>
-          </select>
+          <Select
+            value={form.type}
+            onChange={(type) => setForm((f) => ({ ...f, type }))}
+            options={[
+              { value: 'percent', label: 'Percent (%) off' },
+              { value: 'flat', label: 'Flat (₹) off' },
+            ]}
+            ariaLabel="Discount type"
+          />
         </div>
         <div>
           <label className={LABEL}>{form.type === 'percent' ? 'Percent off (%)' : 'Amount off (₹)'}</label>
@@ -90,7 +96,7 @@ export default function CouponFormModal({ coupon, onClose }) {
           <button type="button" onClick={onClose} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink-dim hover:bg-panel">
             Cancel
           </button>
-          <button type="submit" disabled={mutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50">
+          <button type="submit" disabled={mutation.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-btn-ink hover:opacity-90 disabled:opacity-50">
             {mutation.isPending ? 'Saving…' : coupon ? 'Save changes' : 'Create coupon'}
           </button>
         </div>

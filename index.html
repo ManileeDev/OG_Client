@@ -14,6 +14,15 @@
       if (localStorage.getItem('og-theme') === 'light') {
         document.documentElement.classList.add('light')
       }
+      // Colour palette: 'default' (olive) or 'mono' (black & white).
+      // ?palette=default|mono in the URL overrides and persists.
+      const forcedPalette = new URLSearchParams(location.search).get('palette')
+      if (forcedPalette === 'default' || forcedPalette === 'mono') {
+        localStorage.setItem('og-palette', forcedPalette)
+      }
+      if (localStorage.getItem('og-palette') === 'mono') {
+        document.documentElement.classList.add('mono')
+      }
     </script>
   </head>
   <body>

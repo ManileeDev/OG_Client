@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { ReceiptText, Package, Users, Tag } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
+import SettingsMenu from './SettingsMenu'
 
 export const NAV_ITEMS = [
   { to: '/', label: 'Billing', icon: ReceiptText },
@@ -49,15 +50,19 @@ export default function Sidebar() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto border-t border-edge pt-3">
+        <div className="mt-auto flex flex-col gap-1 border-t border-edge pt-3">
           <ThemeToggle withLabel />
+          <SettingsMenu withLabel direction="up" />
         </div>
       </aside>
 
       {/* Mobile / tablet: brand on top, nav as a fixed footer bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-edge bg-panel px-4 py-3 lg:hidden">
         <Brand />
-        <ThemeToggle />
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <SettingsMenu direction="down" />
+        </div>
       </header>
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-edge bg-panel pb-[env(safe-area-inset-bottom)] lg:hidden">
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (

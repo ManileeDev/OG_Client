@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ShoppingCart, X } from 'lucide-react'
 import { apiGet, apiPost } from '../../api/client'
 import { useBilling } from '../../context/BillingContext'
 import PageHeader from '../../components/PageHeader'
@@ -20,10 +21,13 @@ export default function BillingPage() {
     setAppliedCoupon,
     manualDiscount,
     setManualDiscount,
+    gstEnabled,
+    setGstEnabled,
     resetSale,
   } = useBilling()
   const [invoice, setInvoice] = useState(null)
   const [checkoutTotal, setCheckoutTotal] = useState(null) // non-null → payment step open
+  const [cartOpen, setCartOpen] = useState(false) // mobile checkout drawer
 
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ['products'],
@@ -59,6 +63,7 @@ export default function BillingPage() {
     () => cart.reduce((sum, l) => sum + l.product.price * l.qty, 0),
     [cart],
   )
+  const itemCount = useMemo(() => cart.reduce((sum, l) => sum + l.qty, 0), [cart])
 
   const generateMutation = useMutation({
     mutationFn: (body) => apiPost('/invoices', body),
@@ -68,6 +73,7 @@ export default function BillingPage() {
       queryClient.invalidateQueries({ queryKey: ['coupons'] })
       resetSale()
       setCheckoutTotal(null)
+      setCartOpen(false)
       setInvoice(created)
     },
   })
@@ -87,9 +93,31 @@ export default function BillingPage() {
       items: cart.map((l) => ({ productId: l.product.id, qty: l.qty })),
       couponCode: appliedCoupon?.code ?? null,
       manualDiscountPercent: Number(manualDiscount || 0),
+      gstEnabled,
       payment,
     })
   }
+
+  const checkoutPanel = (
+    <>
+      <CustomerForm customer={customer} onChange={setCustomer} />
+      <CartSummary
+        cart={cart}
+        subtotal={subtotal}
+        appliedCoupon={appliedCoupon}
+        onCouponChange={setAppliedCoupon}
+        manualDiscount={manualDiscount}
+        onManualDiscountChange={setManualDiscount}
+        customer={customer}
+        onSetQty={setQty}
+        onRemove={removeLine}
+        onClear={() => setCart([])}
+        gstEnabled={gstEnabled}
+        onGstChange={setGstEnabled}
+        onProceed={startPayment}
+      />
+    </>
+  )
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -100,24 +128,52 @@ export default function BillingPage() {
       />
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_400px]">
-        <ProductPicker products={products} loading={productsLoading} cartQty={cartQty} onAdd={addToCart} />
+        <ProductPicker
+          products={products}
+          loading={productsLoading}
+          cartQty={cartQty}
+          onAdd={addToCart}
+          onSetQty={setQty}
+        />
 
-        <div className="flex flex-col gap-6">
-          <CustomerForm customer={customer} onChange={setCustomer} />
-          <CartSummary
-            cart={cart}
-            subtotal={subtotal}
-            appliedCoupon={appliedCoupon}
-            onCouponChange={setAppliedCoupon}
-            manualDiscount={manualDiscount}
-            onManualDiscountChange={setManualDiscount}
-            customer={customer}
-            onSetQty={setQty}
-            onRemove={removeLine}
-            onProceed={startPayment}
-          />
-        </div>
+        {/* Desktop: checkout beside the picker. Mobile gets the drawer below. */}
+        <div className="hidden flex-col gap-6 lg:flex">{checkoutPanel}</div>
       </div>
+
+      {/* Mobile: floating cart button opens the checkout drawer (hidden while empty) */}
+      {itemCount > 0 && (
+        <button
+          onClick={() => setCartOpen(true)}
+          className="fixed bottom-20 left-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-btn-ink shadow-xl shadow-black/40 lg:hidden"
+          aria-label={`Open cart, ${itemCount} items`}
+        >
+          <ShoppingCart size={22} />
+          <span className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-surface bg-danger px-1.5 text-xs font-bold text-white">
+            {itemCount}
+          </span>
+        </button>
+      )}
+
+      {cartOpen && (
+        <div className="fixed inset-0 z-[45] lg:hidden">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setCartOpen(false)} />
+          <div className="absolute inset-y-0 left-0 flex w-full max-w-sm animate-[drawer-in_0.25s_ease-out] flex-col border-r border-edge bg-surface shadow-2xl">
+            <div className="flex items-center justify-between border-b border-edge px-4 py-3">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-dim">
+                Checkout{itemCount > 0 && ` · ${itemCount} item${itemCount > 1 ? 's' : ''}`}
+              </h2>
+              <button
+                onClick={() => setCartOpen(false)}
+                className="rounded-lg p-1.5 text-ink-dim hover:bg-panel-2 hover:text-ink"
+                aria-label="Close cart"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">{checkoutPanel}</div>
+          </div>
+        </div>
+      )}
 
       {checkoutTotal !== null && (
         <PaymentModal

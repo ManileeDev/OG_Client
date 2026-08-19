@@ -68,29 +68,72 @@ export default function CustomersPage() {
         kicker="Relationships"
         title="Customers"
         subtitle="Everyone who has walked out with an OG bag."
-      />
-
-      <div className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard icon={UserRound} label="Total Customers" value={stats.total} tone="amber" loading={isLoading} />
-        <StatCard icon={Wallet} label="Total Revenue" value={formatINR(stats.revenue)} tone="teal" loading={isLoading} />
-        <StatCard icon={Sparkles} label="Repeat Customers" value={stats.repeat} tone="pink" loading={isLoading} />
-        <StatCard icon={TrendingUp} label="Avg. Order Value" value={formatINR(stats.aov)} tone="violet" loading={isLoading} />
-      </div>
-
-      <div className="mb-4">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by name or phone..." />
-      </div>
+      >
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          <StatCard icon={UserRound} label="Total Customers" value={stats.total} tone="amber" loading={isLoading} />
+          <StatCard icon={Wallet} label="Total Revenue" value={formatINR(stats.revenue)} tone="teal" loading={isLoading} />
+          <StatCard icon={Sparkles} label="Repeat Customers" value={stats.repeat} tone="pink" loading={isLoading} />
+          <StatCard icon={TrendingUp} label="Avg. Order Value" value={formatINR(stats.aov)} tone="violet" loading={isLoading} />
+        </div>
+        <div className="mt-4">
+          <SearchInput value={search} onChange={setSearch} placeholder="Search by name or phone..." />
+        </div>
+      </PageHeader>
 
       {error ? (
         <ErrorState error={error} onRetry={refetch} />
       ) : (
-        <DataTable
-          columns={columns}
-          rows={filtered}
-          rowKey={(c) => c.id}
-          loading={isLoading}
-          emptyMessage="No customers match your search."
-        />
+        <>
+          {/* Desktop: table. Mobile: stacked cards (the table doesn't shrink well) */}
+          <div className="hidden md:block">
+            <DataTable
+              columns={columns}
+              rows={filtered}
+              rowKey={(c) => c.id}
+              loading={isLoading}
+              emptyMessage="No customers match your search."
+            />
+          </div>
+          <div className="md:hidden">
+            {isLoading ? (
+              <ul className="flex flex-col gap-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <li key={i} className="h-28 animate-pulse rounded-xl border border-edge bg-panel-2/40" />
+                ))}
+              </ul>
+            ) : filtered.length === 0 ? (
+              <div className="rounded-xl border border-edge bg-panel px-4 py-10 text-center text-sm text-ink-dim">
+                No customers match your search.
+              </div>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {filtered.map((c) => (
+                  <li key={c.id} className="rounded-xl border border-edge bg-panel p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <Link
+                        to={`/customers/${c.id}`}
+                        className="min-w-0 flex-1 truncate text-sm font-medium underline-offset-4 hover:text-accent hover:underline"
+                      >
+                        {c.name}
+                      </Link>
+                      <span className="text-sm font-semibold">{formatINR(c.totalSpent)}</span>
+                    </div>
+                    <div className="mt-0.5 truncate text-xs text-ink-dim">
+                      {c.phone}
+                      {c.email && ` · ${c.email}`}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-edge pt-2.5 text-xs text-ink-dim">
+                      <span>
+                        {c.orders} order{c.orders === 1 ? '' : 's'}
+                      </span>
+                      <span>Last purchase: {formatDate(c.lastPurchase)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </>
       )}
     </div>
   )

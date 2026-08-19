@@ -11,12 +11,14 @@ export function BillingProvider({ children }) {
   const [customer, setCustomer] = useState(EMPTY_CUSTOMER)
   const [appliedCoupon, setAppliedCoupon] = useState(null) // { code, type, value, discountAmount }
   const [manualDiscount, setManualDiscount] = useState('')
+  const [gstEnabled, setGstEnabled] = useState(true)
 
   const resetSale = () => {
     setCart([])
     setCustomer(EMPTY_CUSTOMER)
     setAppliedCoupon(null)
     setManualDiscount('')
+    setGstEnabled(true)
   }
 
   return (
@@ -30,6 +32,8 @@ export function BillingProvider({ children }) {
         setAppliedCoupon,
         manualDiscount,
         setManualDiscount,
+        gstEnabled,
+        setGstEnabled,
         resetSale,
       }}
     >
