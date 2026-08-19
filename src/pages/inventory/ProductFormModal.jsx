@@ -10,7 +10,7 @@ const FIELD =
   'w-full rounded-lg border border-edge bg-panel px-3 py-2.5 text-sm placeholder:text-ink-dim focus:border-accent focus:outline-none'
 const LABEL = 'mb-1.5 block text-xs font-medium text-ink-dim'
 
-const DEFAULT_CATEGORY = CATEGORIES[0].name
+const DEFAULT_CATEGORY = 'Shirt'
 
 // `group` is a grouped product from groupProducts(); each size row maps to
 // one product document (row.id) so quantities are edited per size.

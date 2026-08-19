@@ -148,7 +148,7 @@ export default function BillingPage() {
           aria-label={`Open cart, ${itemCount} items`}
         >
           <ShoppingCart size={22} />
-          <span className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-surface bg-danger px-1.5 text-xs font-bold text-white">
+          <span className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-surface bg-ink px-1.5 text-xs font-bold text-surface">
             {itemCount}
           </span>
         </button>
