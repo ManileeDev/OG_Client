@@ -116,11 +116,12 @@ input[type="number"] {
 }
 
 /* Printable invoice: the app (#root) and modals collapse to nothing;
-   only the print-only portal (#invoice-print, print:block) remains in flow. */
+   only the print-only portal (#invoice-print, print:block) remains in flow.
+   Sized for 80mm thermal roll paper — height is continuous, not paged. */
 @media print {
   @page {
-    size: A4;
-    margin: 12mm;
+    size: 80mm auto;
+    margin: 0;
   }
   body {
     overflow: visible !important;
@@ -128,5 +129,10 @@ input[type="number"] {
   }
   #root {
     display: none !important;
+  }
+  #invoice-print {
+    width: 80mm;
+    /* Extra bottom padding gives the tear-off some blank feed */
+    padding: 4mm 4mm 10mm;
   }
 }

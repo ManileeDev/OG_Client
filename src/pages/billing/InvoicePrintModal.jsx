@@ -42,120 +42,102 @@ function whatsAppUrl(invoice) {
   return `https://wa.me/91${invoice.customer.phone}?text=${encodeURIComponent(lines.join('\n'))}`
 }
 
-// Black-on-white invoice body, shared by the on-screen preview and the print copy
+const Divider = () => <div className="my-1.5 border-t border-dashed border-black" />
+
+const Row = ({ label, value, bold = false }) => (
+  <div className={`flex justify-between gap-2 ${bold ? 'text-[13px] font-bold' : ''}`}>
+    <span>{label}</span>
+    <span className="shrink-0">{value}</span>
+  </div>
+)
+
+// 80mm thermal receipt body (72mm content), shared by the on-screen
+// preview and the print copy — black-on-white, monospace, dashed rules
 function InvoiceContent({ invoice }) {
+  const totalQty = invoice.items.reduce((sum, item) => sum + item.qty, 0)
   return (
-    <>
-        <div className="flex items-start justify-between border-b border-gray-300 pb-4">
-          <div>
-            <div className="text-xl font-bold" style={{ fontFamily: 'Georgia, serif' }}>
-              OG Clothing
-            </div>
-            <div className="text-xs text-gray-600">Menswear · Chennai, Tamil Nadu</div>
-            <div className="text-xs text-gray-600">GSTIN: 33XXXXX0000X1Z5</div>
+    <div className="mx-auto w-[72mm] font-mono text-[11px] leading-relaxed text-black">
+      <div className="text-center">
+        <div className="text-[15px] font-bold tracking-widest">OG CLOTHING</div>
+        <div>Menswear · Madurai, Tamil Nadu</div>
+        <div>GSTIN: 33XXXXX0000X1Z5</div>
+      </div>
+
+      <Divider />
+      <Row label={invoice.invoiceNumber} value={formatDate(invoice.createdAt)} />
+      <div className="mt-1">Billed to: {invoice.customer.name}</div>
+      <div>{invoice.customer.phone}</div>
+
+      <Divider />
+      <Row label="ITEM" value="AMOUNT" />
+      {invoice.items.map((item) => (
+        <div key={item.productId} className="mt-1">
+          <div className="font-semibold">
+            {item.name}
+            {item.sku ? ` [${item.sku}]` : ''}
           </div>
-          <div className="text-right">
-            <div className="font-mono text-sm font-bold">{invoice.invoiceNumber}</div>
-            <div className="text-xs text-gray-600">{formatDate(invoice.createdAt)}</div>
-          </div>
+          <Row
+            label={`${[item.size, item.colour].filter(Boolean).join(' · ')} · ${item.qty} x ${formatINR(item.unitPrice)}`}
+            value={formatINR(item.lineTotal)}
+          />
         </div>
+      ))}
+      <div className="mt-1">
+        Items: {invoice.items.length} · Qty: {totalQty}
+      </div>
 
-        <div className="mt-4 text-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Billed to</div>
-          <div className="mt-1 font-medium">{invoice.customer.name}</div>
-          <div className="text-xs text-gray-600">
-            {invoice.customer.phone}
-            {invoice.customer.email ? ` · ${invoice.customer.email}` : ''}
-          </div>
-        </div>
-
-        <table className="mt-4 w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-300 text-left text-xs uppercase tracking-wide text-gray-500">
-              <th className="py-2 pr-2">Item</th>
-              <th className="py-2 pr-2">Size / Colour</th>
-              <th className="py-2 pr-2 text-right">Qty</th>
-              <th className="py-2 pr-2 text-right">Rate</th>
-              <th className="py-2 text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoice.items.map((item) => (
-              <tr key={item.productId} className="border-b border-gray-200">
-                <td className="py-2 pr-2">
-                  <div className="font-medium">{item.name}</div>
-                  {item.sku && <div className="text-xs text-gray-500">{item.sku}</div>}
-                </td>
-                <td className="py-2 pr-2 text-gray-600">
-                  {[item.size, item.colour].filter(Boolean).join(' · ')}
-                </td>
-                <td className="py-2 pr-2 text-right">{item.qty}</td>
-                <td className="py-2 pr-2 text-right">{formatINR(item.unitPrice)}</td>
-                <td className="py-2 text-right">{formatINR(item.lineTotal)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="mt-4 ml-auto w-64 text-sm">
-          <div className="flex justify-between py-1">
-            <span className="text-gray-600">Subtotal</span>
-            <span>{formatINR(invoice.subtotal)}</span>
-          </div>
-          {invoice.coupon && (
-            <div className="flex justify-between py-1">
-              <span className="text-gray-600">Coupon ({invoice.coupon.code})</span>
-              <span>−{formatINR(invoice.coupon.discountAmount)}</span>
-            </div>
-          )}
-          {invoice.manualDiscountAmount > 0 && (
-            <div className="flex justify-between py-1">
-              <span className="text-gray-600">Manual Discount ({invoice.manualDiscountPercent}%)</span>
-              <span>−{formatINR(invoice.manualDiscountAmount)}</span>
-            </div>
-          )}
-          <div className="mt-1 flex justify-between border-t border-gray-300 py-2 font-bold">
-            <span>Total</span>
-            <span>{formatINR(invoice.total)}</span>
-          </div>
+      <Divider />
+      <Row label="Subtotal" value={formatINR(invoice.subtotal)} />
+      {invoice.coupon && (
+        <Row
+          label={`Coupon (${invoice.coupon.code})`}
+          value={`-${formatINR(invoice.coupon.discountAmount)}`}
+        />
+      )}
+      {invoice.manualDiscountAmount > 0 && (
+        <Row
+          label={`Discount (${invoice.manualDiscountPercent}%)`}
+          value={`-${formatINR(invoice.manualDiscountAmount)}`}
+        />
+      )}
+      <div className="flex justify-between gap-2 text-[13px] font-bold">
+        <span>
+          TOTAL
           {invoice.gstRate > 0 && (
-            <div className="pb-1 text-right text-xs text-gray-500">Inclusive of all taxes</div>
+            <span className="text-[10px] font-normal"> (Inclusive of all taxes)</span>
           )}
-          {invoice.payment && (
+        </span>
+        <span className="shrink-0">{formatINR(invoice.total)}</span>
+      </div>
+
+      {invoice.payment && (
+        <>
+          <Divider />
+          <Row
+            label="Paid via"
+            value={`${MODE_LABEL[invoice.payment.mode]}${invoice.payment.reference ? ` · ${invoice.payment.reference}` : ''}`}
+          />
+          {invoice.payment.mode === 'cash' && invoice.payment.amountTendered != null && (
             <>
-              <div className="flex justify-between border-t border-gray-200 py-1 pt-2">
-                <span className="text-gray-600">Paid via</span>
-                <span>
-                  {MODE_LABEL[invoice.payment.mode]}
-                  {invoice.payment.reference ? ` · ${invoice.payment.reference}` : ''}
-                </span>
-              </div>
-              {invoice.payment.mode === 'cash' && invoice.payment.amountTendered != null && (
-                <>
-                  <div className="flex justify-between py-1">
-                    <span className="text-gray-600">Cash Received</span>
-                    <span>{formatINR(invoice.payment.amountTendered)}</span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-gray-600">Change Returned</span>
-                    <span>{formatINR(invoice.payment.changeReturned)}</span>
-                  </div>
-                </>
-              )}
+              <Row label="Cash Received" value={formatINR(invoice.payment.amountTendered)} />
+              <Row label="Change Returned" value={formatINR(invoice.payment.changeReturned)} />
             </>
           )}
-        </div>
+        </>
+      )}
 
-        <div className="mt-6 border-t border-gray-300 pt-3 text-center text-xs text-gray-500">
-          Thank you for shopping with OG Clothing!
-        </div>
-    </>
+      <Divider />
+      <div className="text-center">
+        <div>Thank you for shopping with</div>
+        <div className="font-semibold">OG Clothing!</div>
+      </div>
+    </div>
   )
 }
 
 export default function InvoicePrintModal({ invoice, onClose, isNew = true }) {
   return (
-    <Modal title={isNew ? 'Invoice generated' : `Invoice ${invoice.invoiceNumber}`} onClose={onClose} wide>
+    <Modal title={isNew ? 'Invoice generated' : `Invoice ${invoice.invoiceNumber}`} onClose={onClose}>
       {isNew && (
         <div className="mb-4 flex items-center gap-2 text-sm text-success">
           <CheckCircle2 size={16} />
@@ -163,8 +145,8 @@ export default function InvoicePrintModal({ invoice, onClose, isNew = true }) {
         </div>
       )}
 
-      {/* On-screen preview */}
-      <div className="rounded-lg bg-white p-6 text-black">
+      {/* On-screen preview: white strip the width of the receipt */}
+      <div className="mx-auto w-fit rounded-lg bg-white px-4 py-5 text-black shadow-inner">
         <InvoiceContent invoice={invoice} />
       </div>
 
