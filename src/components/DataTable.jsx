@@ -14,7 +14,14 @@ function SkeletonRows({ columns }) {
   ))
 }
 
-export default function DataTable({ columns, rows, rowKey, loading = false, emptyMessage = 'Nothing here yet.' }) {
+export default function DataTable({ columns, rows, rowKey, loading = false, emptyMessage = 'Nothing here yet.', onRowClick }) {
+  // Clicks on interactive elements inside a row (links, action buttons)
+  // keep their own behaviour instead of triggering the row click
+  const handleRowClick = (e, row) => {
+    if (e.target.closest('a, button, input, select, label')) return
+    onRowClick(row)
+  }
+
   return (
     // Rows scroll inside this container so the header row stays pinned.
     <div className="max-h-[65vh] overflow-auto rounded-xl border border-edge bg-panel">
@@ -43,7 +50,11 @@ export default function DataTable({ columns, rows, rowKey, loading = false, empt
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={rowKey(row)} className="hover:bg-panel-2/50">
+              <tr
+                key={rowKey(row)}
+                onClick={onRowClick ? (e) => handleRowClick(e, row) : undefined}
+                className={`hover:bg-panel-2/50 ${onRowClick ? 'cursor-pointer' : ''}`}
+              >
                 {columns.map((col) => (
                   <td key={col.header} className={`border-b border-edge px-4 py-3.5 ${col.className ?? ''}`}>
                     {col.cell(row)}

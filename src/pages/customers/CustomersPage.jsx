@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { UserRound, Wallet, Sparkles, TrendingUp } from 'lucide-react'
 import { apiGet } from '../../api/client'
@@ -11,6 +11,7 @@ import DataTable from '../../components/DataTable'
 import ErrorState from '../../components/ErrorState'
 
 export default function CustomersPage() {
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const { data: customers = [], isLoading, error, refetch } = useQuery({
     queryKey: ['customers'],
@@ -92,6 +93,7 @@ export default function CustomersPage() {
               rowKey={(c) => c.id}
               loading={isLoading}
               emptyMessage="No customers match your search."
+              onRowClick={(c) => navigate(`/customers/${c.id}`)}
             />
           </div>
           <div className="md:hidden">
