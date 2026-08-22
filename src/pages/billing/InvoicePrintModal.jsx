@@ -7,10 +7,13 @@ const MODE_LABEL = { cash: 'Cash', upi: 'UPI', card: 'Card' }
 
 function whatsAppUrl(invoice) {
   const lines = [
-    `*OG Clothing — Invoice ${invoice.invoiceNumber}*`,
-    formatDate(invoice.createdAt),
+    'Thank you for choosing *OG Clothing*.',
     '',
-    `Hi ${invoice.customer.name}, thanks for shopping with us! Here is your bill:`,
+    'We appreciate your trust in our brand. Good style gets noticed. Good quality gets remembered—we believe in both.',
+    '',
+    `Invoice ${invoice.invoiceNumber}`,
+    formatDate(invoice.createdAt),
+    
     '',
     ...invoice.items.map(
       (item, i) =>
@@ -29,14 +32,12 @@ function whatsAppUrl(invoice) {
       ? [
           `Paid via ${MODE_LABEL[invoice.payment.mode]}${invoice.payment.reference ? ` (${invoice.payment.reference})` : ''}`,
           ...(invoice.payment.mode === 'cash' && invoice.payment.amountTendered != null
-            ? [
-                `Cash received: ${formatINR(invoice.payment.amountTendered)} · Change: ${formatINR(invoice.payment.changeReturned)}`,
-              ]
+            ? [`Cash received: ${formatINR(invoice.payment.amountTendered)} ·`]
             : []),
         ]
       : []),
     '',
-    'See you again soon! 🛍️',
+    '*Until next time—stay sharp.* ✨',
   ]
   // 91 = India country code; customer phones are stored as 10 digits
   return `https://wa.me/91${invoice.customer.phone}?text=${encodeURIComponent(lines.join('\n'))}`
