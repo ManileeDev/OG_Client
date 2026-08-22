@@ -29,6 +29,7 @@ export default function CartSummary({
 }) {
   const [couponError, setCouponError] = useState(null)
   const [applying, setApplying] = useState(false)
+  const [manualDiscountRs, setManualDiscountRs] = useState('')
 
   const { data: allCoupons = [] } = useQuery({
     queryKey: ['coupons'],
@@ -69,6 +70,26 @@ export default function CartSummary({
   const afterCoupon = subtotal - couponAmount
   const manualPct = Math.min(Math.max(Number(manualDiscount || 0), 0), 100)
   const manualAmount = Math.round(afterCoupon * manualPct) / 100
+
+  useEffect(() => {
+    const amount = Math.round((afterCoupon * manualPct) / 100 * 100) / 100
+    setManualDiscountRs(amount ? amount.toFixed(2) : '')
+  }, [afterCoupon])
+
+  const updateManualPercent = (value) => {
+    const percent = Math.min(Math.max(Number(value || 0), 0), 100)
+    onManualDiscountChange(value === '' ? '' : String(percent))
+    const amount = Math.round((afterCoupon * percent) / 100 * 100) / 100
+    setManualDiscountRs(amount ? amount.toFixed(2) : '')
+  }
+
+  const updateManualAmount = (value) => {
+    const amount = Math.min(Math.max(Number(value || 0), 0), afterCoupon)
+    setManualDiscountRs(value === '' ? '' : String(amount))
+    const percent = afterCoupon ? (amount / afterCoupon) * 100 : 0
+    onManualDiscountChange(percent ? percent.toFixed(2) : '')
+  }
+
   // Prices are inclusive of all taxes; the discounted amount is the final total
   const total = Math.round((afterCoupon - manualAmount) * 100) / 100
 
@@ -175,20 +196,33 @@ export default function CartSummary({
           )}
           {couponError && <p className="mt-2 text-xs text-danger">{couponError}</p>}
 
-          <div className="mt-4">
-            <label className="mb-1.5 block text-xs font-medium text-ink-dim">
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <label className="text-xs font-medium text-ink-dim">
               Manual Discount (%)
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.5"
+                value={manualDiscount}
+                onChange={(e) => updateManualPercent(e.target.value)}
+                placeholder="0"
+                className="mt-1.5 w-full rounded-lg border border-edge bg-panel-2 px-3 py-2.5 text-sm placeholder:text-ink-dim focus:border-accent focus:outline-none"
+              />
             </label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.5"
-              value={manualDiscount}
-              onChange={(e) => onManualDiscountChange(e.target.value)}
-              placeholder="0"
-              className="w-full rounded-lg border border-edge bg-panel-2 px-3 py-2.5 text-sm placeholder:text-ink-dim focus:border-accent focus:outline-none"
-            />
+            <label className="text-xs font-medium text-ink-dim">
+              Manual Discount (Rs)
+              <input
+                type="number"
+                min="0"
+                max={afterCoupon}
+                step="0.01"
+                value={manualDiscountRs}
+                onChange={(e) => updateManualAmount(e.target.value)}
+                placeholder="0.00"
+                className="mt-1.5 w-full rounded-lg border border-edge bg-panel-2 px-3 py-2.5 text-sm placeholder:text-ink-dim focus:border-accent focus:outline-none"
+              />
+            </label>
           </div>
 
           <div className="mt-4 flex items-center justify-between">

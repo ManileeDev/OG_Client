@@ -89,6 +89,10 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+:root:not(.light) .brand-logo {
+  filter: invert(1);
+}
+
 /* Slim, theme-aware scrollbars everywhere */
 html {
   scrollbar-width: thin;

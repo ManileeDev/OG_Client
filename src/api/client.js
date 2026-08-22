@@ -13,6 +13,7 @@ async function request(path, options = {}) {
   try {
     res = await fetch(`${API}/api${path}`, {
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       ...options,
     })
   } catch {
