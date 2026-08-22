@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     const nextUser = await apiPost('/auth/login', { username, password })
+    localStorage.setItem('og-access-token', nextUser.accessToken)
     setUser(nextUser)
   }
 
@@ -23,6 +24,7 @@ export function AuthProvider({ children }) {
     try {
       await apiPost('/auth/logout', {})
     } finally {
+      localStorage.removeItem('og-access-token')
       setUser(null)
     }
   }

@@ -11,10 +11,15 @@ export class ApiError extends Error {
 async function request(path, options = {}) {
   let res
   try {
+    const token = localStorage.getItem('og-access-token')
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    }
     res = await fetch(`${API}/api${path}`, {
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       ...options,
+      headers,
     })
   } catch {
     throw new ApiError('Could not reach the server', 0)
