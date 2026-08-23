@@ -8,7 +8,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, options = {}) {
+async function request(path, options = {}, canRefresh = true) {
   let res
   try {
     const token = localStorage.getItem('og-access-token')
@@ -23,6 +23,28 @@ async function request(path, options = {}) {
     })
   } catch {
     throw new ApiError('Could not reach the server', 0)
+  }
+  if (res.status === 401 && canRefresh && !path.startsWith('/auth/')) {
+    const refreshToken = localStorage.getItem('og-refresh-token')
+    if (refreshToken) {
+      try {
+        const refreshed = await request(
+          '/auth/refresh',
+          { method: 'POST', body: JSON.stringify({ refreshToken }) },
+          false,
+        )
+        localStorage.setItem('og-access-token', refreshed.accessToken)
+        localStorage.setItem('og-refresh-token', refreshed.refreshToken)
+        return request(path, options, false)
+      } catch {
+        localStorage.removeItem('og-access-token')
+        localStorage.removeItem('og-refresh-token')
+        window.dispatchEvent(new Event('auth:session-expired'))
+      }
+    } else {
+      localStorage.removeItem('og-access-token')
+      window.dispatchEvent(new Event('auth:session-expired'))
+    }
   }
   if (!res.ok) {
     let detail = `Request failed (${res.status})`

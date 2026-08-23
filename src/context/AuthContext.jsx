@@ -8,15 +8,23 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const handleSessionExpired = () => {
+      setUser(null)
+    }
+    window.addEventListener('auth:session-expired', handleSessionExpired)
+
     apiGet('/auth/me')
       .then(setUser)
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
+
+    return () => window.removeEventListener('auth:session-expired', handleSessionExpired)
   }, [])
 
   const login = async (username, password) => {
     const nextUser = await apiPost('/auth/login', { username, password })
     localStorage.setItem('og-access-token', nextUser.accessToken)
+    localStorage.setItem('og-refresh-token', nextUser.refreshToken)
     setUser(nextUser)
   }
 
@@ -25,6 +33,7 @@ export function AuthProvider({ children }) {
       await apiPost('/auth/logout', {})
     } finally {
       localStorage.removeItem('og-access-token')
+      localStorage.removeItem('og-refresh-token')
       setUser(null)
     }
   }

@@ -157,6 +157,12 @@ const ERRORS = {
     title: 'You need a key for this',
     message: "You're not signed in, or your session has expired. Sign in and try again.",
   },
+  403: {
+    doodle: ShyLock,
+    kicker: 'Error 403',
+    title: 'Access restricted',
+    message: 'Your account is signed in, but it does not have permission to view this area.',
+  },
   404: {
     doodle: LostSock,
     kicker: 'Error 404',
