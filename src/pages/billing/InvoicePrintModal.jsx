@@ -6,7 +6,11 @@ import { formatDate, formatINR } from '../../lib/format'
 const MODE_LABEL = { cash: 'Cash', upi: 'UPI', card: 'Card' }
 
 function whatsAppUrl(invoice) {
+  const customerName = invoice.customer?.name?.trim() || 'there'
+
   const lines = [
+    `Hi ${customerName},`,
+    '',
     'Thank you for choosing *OG Clothing*.',
     '',
     'We appreciate your trust in our brand. Good style gets noticed. Good quality gets remembered—we believe in both.',
@@ -37,7 +41,7 @@ function whatsAppUrl(invoice) {
         ]
       : []),
     '',
-    '*Until next time—stay sharp.* ✨',
+    '*Until next time—stay sharp.*',
   ]
   // 91 = India country code; customer phones are stored as 10 digits
   return `https://wa.me/91${invoice.customer.phone}?text=${encodeURIComponent(lines.join('\n'))}`
@@ -61,7 +65,7 @@ function InvoiceContent({ invoice }) {
       <div className="text-center">
         <div className="text-[15px] font-bold tracking-widest">OG CLOTHING</div>
         <div>Menswear · Madurai, Tamil Nadu</div>
-        <div>GSTIN: 33XXXXX0000X1Z5</div>
+        <div>GSTIN: 33FJLPS0840H1Z3</div>
       </div>
 
       <Divider />
@@ -83,10 +87,6 @@ function InvoiceContent({ invoice }) {
           />
         </div>
       ))}
-      <div className="mt-1">
-        Items: {invoice.items.length} · Qty: {totalQty}
-      </div>
-
       <Divider />
       <Row label="Subtotal" value={formatINR(invoice.subtotal)} />
       {invoice.coupon && (
