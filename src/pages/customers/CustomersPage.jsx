@@ -193,7 +193,7 @@ export default function CustomersPage() {
         title="Customers"
         subtitle="Everyone who has walked out with an OG bag."
         action={
-          <div ref={controlsRef} className="absolute right-0 top-0 flex items-start gap-2">
+          <div ref={controlsRef} className="absolute right-4 top-4 flex items-start gap-2 lg:right-16 lg:top-8">
             <div className="relative">
               <button
                 type="button"
