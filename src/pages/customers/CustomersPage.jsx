@@ -193,7 +193,7 @@ export default function CustomersPage() {
         title="Customers"
         subtitle="Everyone who has walked out with an OG bag."
         action={
-          <div ref={controlsRef} className="relative flex items-start gap-2">
+          <div ref={controlsRef} className="absolute right-0 top-0 flex items-start gap-2">
             <div className="relative">
               <button
                 type="button"
@@ -207,7 +207,7 @@ export default function CustomersPage() {
                 {filtersActive > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-btn-ink">{filtersActive}</span>}
               </button>
               {filtersOpen && (
-              <div className="absolute right-0 top-full z-40 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-edge bg-panel p-4 shadow-xl shadow-black/30">
+              <div className="fixed left-4 right-4 top-24 z-40 mt-2 w-auto max-w-none rounded-xl border border-edge bg-panel p-4 shadow-xl shadow-black/30 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[calc(100vw-2rem)] sm:max-w-80">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-dim">Filter customers</span>
                   <button type="button" onClick={clearFilters} disabled={!filtersActive} className="text-xs font-medium text-accent hover:underline disabled:cursor-not-allowed disabled:opacity-40">Clear all</button>
@@ -248,7 +248,7 @@ export default function CustomersPage() {
                 <span className="hidden sm:inline">Sort by</span>
               </button>
               {sortOpen && (
-                <div className="absolute right-0 top-full z-40 mt-2 w-64 rounded-xl border border-edge bg-panel p-4 shadow-xl shadow-black/30">
+                <div className="fixed left-4 right-4 top-24 z-40 mt-2 w-auto max-w-none rounded-xl border border-edge bg-panel p-4 shadow-xl shadow-black/30 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[calc(100vw-2rem)] sm:max-w-64">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-dim">Sort customers</span>
                     {sortBy !== 'recent' && <button type="button" onClick={() => setSortBy('recent')} className="text-xs font-medium text-accent hover:underline">Reset</button>}
