@@ -6,6 +6,7 @@ import SettingsMenu from './SettingsMenu'
 
 export const NAV_ITEMS = [
   { to: '/', label: 'Billing', icon: ReceiptText },
+  // { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/inventory', label: 'Inventory', icon: Package },
   { to: '/customers', label: 'Customers', icon: Users },
   { to: '/coupons', label: 'Coupons', icon: Tag },
@@ -80,7 +81,7 @@ export default function Sidebar() {
             end={to === '/'}
             className={({ isActive }) =>
               [
-                'flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors',
+                'flex min-w-0 flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors sm:text-[11px]',
                 isActive ? 'text-accent' : 'text-ink-dim hover:text-ink',
               ].join(' ')
             }

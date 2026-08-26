@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { UserCheck } from 'lucide-react'
+import { Store, UserCheck, Wifi } from 'lucide-react'
 import { apiGet } from '../../api/client'
 import { emailError, nameError, phoneError } from '../../lib/validate'
 
@@ -9,7 +9,7 @@ const OK_BORDER = 'border-edge focus:border-accent'
 const BAD_BORDER = 'border-danger/60 focus:border-danger'
 const LABEL = 'mb-1.5 block text-xs font-medium text-ink-dim'
 
-export default function CustomerForm({ customer, onChange }) {
+export default function CustomerForm({ customer, onChange, channel, onChannelChange }) {
   const [existing, setExisting] = useState(null) // matched customer record | null
   const [touched, setTouched] = useState({ phone: false, name: false, email: false })
   const lookedUp = useRef('')
@@ -54,6 +54,25 @@ export default function CustomerForm({ customer, onChange }) {
         </h2>
       </div>
       <div className="flex flex-col gap-4 p-5">
+        <div>
+          <div className={LABEL}>Sale Channel</div>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { value: 'in_store', label: 'In store', icon: Store },
+              { value: 'online', label: 'Online', icon: Wifi },
+            ].map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onChannelChange(value)}
+                className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${channel === value ? 'border-accent bg-accent/10 text-accent' : 'border-edge text-ink-dim hover:border-accent/50 hover:text-ink'}`}
+                aria-pressed={channel === value}
+              >
+                <Icon size={16} /> {label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div>
           <label className={LABEL}>
             Mobile Number <span className="text-danger">*</span>

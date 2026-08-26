@@ -9,6 +9,7 @@ import CustomerHistoryPage from './pages/customers/CustomerHistoryPage'
 import CouponsPage from './pages/coupons/CouponsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import LoginPage from './pages/LoginPage'
+// import AnalyticsPage from './pages/analytics/AnalyticsPage'
 
 const router = createBrowserRouter([
   {
@@ -16,6 +17,7 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { index: true, element: <BillingPage /> },
+      // { path: 'analytics', element: <AnalyticsPage /> },
       { path: 'inventory', element: <InventoryPage /> },
       { path: 'customers', element: <CustomersPage /> },
       { path: 'customers/:customerId', element: <CustomerHistoryPage /> },

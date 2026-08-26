@@ -21,8 +21,12 @@ export default function BillingPage() {
     setAppliedCoupon,
     manualDiscount,
     setManualDiscount,
+    manualDiscountAmount,
+    setManualDiscountAmount,
     gstEnabled,
     setGstEnabled,
+    channel,
+    setChannel,
     resetSale,
   } = useBilling()
   const [invoice, setInvoice] = useState(null)
@@ -93,14 +97,16 @@ export default function BillingPage() {
       items: cart.map((l) => ({ productId: l.product.id, qty: l.qty })),
       couponCode: appliedCoupon?.code ?? null,
       manualDiscountPercent: Number(manualDiscount || 0),
+      manualDiscountAmount: manualDiscountAmount === '' ? null : Number(manualDiscountAmount),
       gstEnabled,
+      channel,
       payment,
     })
   }
 
   const checkoutPanel = (
     <>
-      <CustomerForm customer={customer} onChange={setCustomer} />
+      <CustomerForm customer={customer} onChange={setCustomer} channel={channel} onChannelChange={setChannel} />
       <CartSummary
         cart={cart}
         subtotal={subtotal}
@@ -108,6 +114,8 @@ export default function BillingPage() {
         onCouponChange={setAppliedCoupon}
         manualDiscount={manualDiscount}
         onManualDiscountChange={setManualDiscount}
+        manualDiscountAmount={manualDiscountAmount}
+        onManualDiscountAmountChange={setManualDiscountAmount}
         customer={customer}
         onSetQty={setQty}
         onRemove={removeLine}

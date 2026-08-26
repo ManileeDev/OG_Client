@@ -19,6 +19,8 @@ export default function CartSummary({
   onCouponChange,
   manualDiscount,
   onManualDiscountChange,
+  manualDiscountAmount,
+  onManualDiscountAmountChange,
   customer,
   onSetQty,
   onRemove,
@@ -69,16 +71,18 @@ export default function CartSummary({
   const couponAmount = appliedCoupon?.discountAmount ?? 0
   const afterCoupon = subtotal - couponAmount
   const manualPct = Math.min(Math.max(Number(manualDiscount || 0), 0), 100)
-  const manualAmount = Math.round(afterCoupon * manualPct) / 100
+  const exactManualAmount = manualDiscountAmount === '' ? null : Math.min(Math.max(Number(manualDiscountAmount || 0), 0), afterCoupon)
+  const manualAmount = exactManualAmount ?? Math.round(afterCoupon * manualPct) / 100
 
   useEffect(() => {
     const amount = Math.round((afterCoupon * manualPct) / 100 * 100) / 100
-    setManualDiscountRs(amount ? amount.toFixed(2) : '')
-  }, [afterCoupon])
+    if (exactManualAmount === null) setManualDiscountRs(amount ? amount.toFixed(2) : '')
+  }, [afterCoupon, exactManualAmount, manualPct])
 
   const updateManualPercent = (value) => {
     const percent = Math.min(Math.max(Number(value || 0), 0), 100)
     onManualDiscountChange(value === '' ? '' : String(percent))
+    onManualDiscountAmountChange('')
     const amount = Math.round((afterCoupon * percent) / 100 * 100) / 100
     setManualDiscountRs(amount ? amount.toFixed(2) : '')
   }
@@ -86,6 +90,7 @@ export default function CartSummary({
   const updateManualAmount = (value) => {
     const amount = Math.min(Math.max(Number(value || 0), 0), afterCoupon)
     setManualDiscountRs(value === '' ? '' : String(amount))
+    onManualDiscountAmountChange(value === '' ? '' : String(amount))
     const percent = afterCoupon ? (amount / afterCoupon) * 100 : 0
     onManualDiscountChange(percent ? percent.toFixed(2) : '')
   }

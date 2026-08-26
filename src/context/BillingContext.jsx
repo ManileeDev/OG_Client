@@ -11,14 +11,18 @@ export function BillingProvider({ children }) {
   const [customer, setCustomer] = useState(EMPTY_CUSTOMER)
   const [appliedCoupon, setAppliedCoupon] = useState(null) // { code, type, value, discountAmount }
   const [manualDiscount, setManualDiscount] = useState('')
+  const [manualDiscountAmount, setManualDiscountAmount] = useState('')
   const [gstEnabled, setGstEnabled] = useState(true)
+  const [channel, setChannel] = useState('in_store')
 
   const resetSale = () => {
     setCart([])
     setCustomer(EMPTY_CUSTOMER)
     setAppliedCoupon(null)
     setManualDiscount('')
+    setManualDiscountAmount('')
     setGstEnabled(true)
+    setChannel('in_store')
   }
 
   return (
@@ -32,8 +36,12 @@ export function BillingProvider({ children }) {
         setAppliedCoupon,
         manualDiscount,
         setManualDiscount,
+        manualDiscountAmount,
+        setManualDiscountAmount,
         gstEnabled,
         setGstEnabled,
+        channel,
+        setChannel,
         resetSale,
       }}
     >

@@ -1,22 +1,66 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { UserRound, Wallet, Sparkles, TrendingUp } from 'lucide-react'
-import { apiGet } from '../../api/client'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { UserRound, Wallet, Sparkles, TrendingUp, Trash2, SlidersHorizontal, ArrowUpDown } from 'lucide-react'
+import { apiDelete, apiGet } from '../../api/client'
 import { formatDate, formatINR } from '../../lib/format'
 import PageHeader from '../../components/PageHeader'
 import StatCard from '../../components/StatCard'
 import SearchInput from '../../components/SearchInput'
 import DataTable from '../../components/DataTable'
 import ErrorState from '../../components/ErrorState'
+import ConfirmDialog from '../../components/ConfirmDialog'
+import Select from '../../components/Select'
+
+const TODAY = new Date().toISOString().slice(0, 10)
+const FILTER_INPUT = 'mt-1.5 w-full rounded-lg border border-edge bg-panel-2 px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-accent'
 
 export default function CustomersPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [channel, setChannel] = useState('all')
+  const [sortBy, setSortBy] = useState('recent')
+  const [deleting, setDeleting] = useState(null)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [sortOpen, setSortOpen] = useState(false)
+  const controlsRef = useRef(null)
+
+  useEffect(() => {
+    if (!filtersOpen && !sortOpen) return undefined
+    const closeOnOutsideClick = (event) => {
+      if (controlsRef.current && !controlsRef.current.contains(event.target)) {
+        setFiltersOpen(false)
+        setSortOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', closeOnOutsideClick)
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick)
+  }, [filtersOpen, sortOpen])
   const { data: customers = [], isLoading, error, refetch } = useQuery({
     queryKey: ['customers'],
     queryFn: () => apiGet('/customers'),
   })
+  const deleteMutation = useMutation({
+    mutationFn: (customerId) => apiDelete(`/customers/${customerId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      setDeleting(null)
+    },
+  })
+
+  const invoiceQueries = useQueries({
+    queries: customers.map((customer) => ({
+      queryKey: ['customer-invoices', customer.id],
+      queryFn: () => apiGet(`/customers/${customer.id}/invoices`),
+      staleTime: 60_000,
+    })),
+  })
+  const invoicesByCustomer = new Map(
+    customers.map((customer, index) => [customer.id, invoiceQueries[index]?.data ?? []]),
+  )
 
   const stats = useMemo(() => {
     const revenue = customers.reduce((sum, c) => sum + c.totalSpent, 0)
@@ -31,11 +75,29 @@ export default function CustomersPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return customers
-    return customers.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.phone.includes(q),
-    )
-  }, [customers, search])
+    const matchingCustomers = customers.filter((c) => {
+      const matchesSearch = !q || c.name.toLowerCase().includes(q) || c.phone.includes(q)
+      const invoices = invoicesByCustomer.get(c.id) ?? []
+      const matchesInvoice = invoices.some((invoice) => {
+        const purchaseDate = invoice.createdAt ? new Date(invoice.createdAt).toISOString().slice(0, 10) : ''
+        const effectiveTo = toDate || (fromDate ? TODAY : '')
+        const matchesDate = (!fromDate || purchaseDate >= fromDate) && (!effectiveTo || purchaseDate <= effectiveTo)
+        const matchesChannel = channel === 'all' || invoice.channel === channel
+        return matchesDate && matchesChannel
+      })
+      const hasFilters = Boolean(fromDate || toDate || channel !== 'all')
+      const legacyDate = c.lastPurchase ? new Date(c.lastPurchase).toISOString().slice(0, 10) : ''
+      const effectiveTo = toDate || (fromDate ? TODAY : '')
+      const matchesLegacy = !invoices.length && (!fromDate || legacyDate >= fromDate) && (!effectiveTo || legacyDate <= effectiveTo) && channel === 'all'
+      return matchesSearch && (!hasFilters || matchesInvoice || matchesLegacy)
+    })
+    return [...matchingCustomers].sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name)
+      if (sortBy === 'spent') return b.totalSpent - a.totalSpent
+      if (sortBy === 'orders') return b.orders - a.orders
+      return new Date(b.lastPurchase || 0) - new Date(a.lastPurchase || 0)
+    })
+  }, [customers, search, fromDate, toDate, channel, sortBy, invoiceQueries])
 
   const columns = [
     {
@@ -61,7 +123,27 @@ export default function CustomersPage() {
     { header: 'Orders', cell: (c) => c.orders },
     { header: 'Total Spent', cell: (c) => formatINR(c.totalSpent) },
     { header: 'Last Purchase', cell: (c) => formatDate(c.lastPurchase), className: 'text-ink-dim' },
+    {
+      header: '',
+      cell: (c) => (
+        <button
+          onClick={() => setDeleting(c)}
+          className="rounded-lg p-2 text-ink-dim hover:bg-danger/10 hover:text-danger"
+          aria-label={`Delete ${c.name}`}
+          title="Delete customer"
+        >
+          <Trash2 size={15} />
+        </button>
+      ),
+    },
   ]
+
+  const filtersActive = [fromDate, toDate, channel !== 'all'].filter(Boolean).length
+  const clearFilters = () => {
+    setFromDate('')
+    setToDate('')
+    setChannel('all')
+  }
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -69,6 +151,79 @@ export default function CustomersPage() {
         kicker="Relationships"
         title="Customers"
         subtitle="Everyone who has walked out with an OG bag."
+        action={
+          <div ref={controlsRef} className="relative flex items-start gap-2">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => { setFiltersOpen((open) => !open); setSortOpen(false) }}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${filtersActive ? 'border-accent bg-accent/10 text-accent' : 'border-edge bg-panel text-ink-dim hover:border-accent/50 hover:text-ink'}`}
+                aria-expanded={filtersOpen}
+                aria-label="Customer filters"
+              >
+                <SlidersHorizontal size={16} />
+                <span className="hidden sm:inline">Filters</span>
+                {filtersActive > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-btn-ink">{filtersActive}</span>}
+              </button>
+              {filtersOpen && (
+              <div className="absolute right-0 top-full z-40 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-edge bg-panel p-4 shadow-xl shadow-black/30">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-dim">Filter customers</span>
+                  <button type="button" onClick={clearFilters} disabled={!filtersActive} className="text-xs font-medium text-accent hover:underline disabled:cursor-not-allowed disabled:opacity-40">Clear all</button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs font-medium text-ink-dim">
+                    From date
+                    <input type="date" max={TODAY} value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={FILTER_INPUT} />
+                  </label>
+                  <label className="text-xs font-medium text-ink-dim">
+                    To date
+                    <input type="date" max={TODAY} min={fromDate || undefined} value={toDate} onChange={(e) => setToDate(e.target.value)} className={FILTER_INPUT} />
+                  </label>
+                </div>
+                <label className="mt-3 block text-xs font-medium text-ink-dim">
+                  Sale channel
+                  <Select
+                    value={channel}
+                    onChange={setChannel}
+                    options={[{ value: 'all', label: 'All channels' }, { value: 'in_store', label: 'In store' }, { value: 'online', label: 'Online' }]}
+                    className="mt-1.5"
+                    buttonClassName="bg-panel-2"
+                    ariaLabel="Filter by sale channel"
+                  />
+                </label>
+              </div>
+              )}
+            </div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => { setSortOpen((open) => !open); setFiltersOpen(false) }}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${sortBy !== 'recent' ? 'border-accent bg-accent/10 text-accent' : 'border-edge bg-panel text-ink-dim hover:border-accent/50 hover:text-ink'}`}
+                aria-expanded={sortOpen}
+                aria-label="Sort customers"
+              >
+                <ArrowUpDown size={16} />
+                <span className="hidden sm:inline">Sort by</span>
+              </button>
+              {sortOpen && (
+                <div className="absolute right-0 top-full z-40 mt-2 w-64 rounded-xl border border-edge bg-panel p-4 shadow-xl shadow-black/30">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-dim">Sort customers</span>
+                    {sortBy !== 'recent' && <button type="button" onClick={() => setSortBy('recent')} className="text-xs font-medium text-accent hover:underline">Reset</button>}
+                  </div>
+                  <Select
+                    value={sortBy}
+                    onChange={setSortBy}
+                    options={[{ value: 'recent', label: 'Most recent purchase' }, { value: 'name', label: 'Customer name' }, { value: 'spent', label: 'Total spent' }, { value: 'orders', label: 'Number of orders' }]}
+                    buttonClassName="bg-panel-2"
+                    ariaLabel="Sort customers by"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        }
       >
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <StatCard icon={UserRound} label="Total Customers" value={stats.total} tone="amber" loading={isLoading} />
@@ -130,6 +285,7 @@ export default function CustomersPage() {
                       </span>
                       <span>Last purchase: {formatDate(c.lastPurchase)}</span>
                     </div>
+                    <button onClick={() => setDeleting(c)} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-danger/30 px-3 py-2 text-xs font-medium text-danger hover:bg-danger/10"><Trash2 size={13} /> Delete customer</button>
                   </li>
                 ))}
               </ul>
@@ -137,6 +293,7 @@ export default function CustomersPage() {
           </div>
         </>
       )}
+      {deleting && <ConfirmDialog title="Delete customer?" message={`Delete ${deleting.name}? Their customer profile will be removed, but recorded invoices will remain available in the database.`} onClose={() => deleteMutation.isPending ? null : setDeleting(null)} onConfirm={() => deleteMutation.mutate(deleting.id)} busy={deleteMutation.isPending} />}
     </div>
   )
 }

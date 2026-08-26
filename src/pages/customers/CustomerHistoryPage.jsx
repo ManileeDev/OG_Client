@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, ShoppingBag, Wallet, TrendingUp, CalendarDays, Eye } from 'lucide-react'
-import { apiGet } from '../../api/client'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, ShoppingBag, Wallet, TrendingUp, CalendarDays, Eye, Trash2, Store, Wifi } from 'lucide-react'
+import { apiDelete, apiGet } from '../../api/client'
 import { formatDate, formatINR } from '../../lib/format'
 import PageHeader from '../../components/PageHeader'
 import StatCard from '../../components/StatCard'
 import DataTable from '../../components/DataTable'
 import ErrorState from '../../components/ErrorState'
 import InvoicePrintModal from '../billing/InvoicePrintModal'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 function discountLabel(inv) {
   const parts = []
@@ -18,9 +19,17 @@ function discountLabel(inv) {
   return parts.join(' · ')
 }
 
+function channelLabel(inv) {
+  if (inv.channel === 'online') return <span className="inline-flex items-center gap-1 text-teal-400"><Wifi size={13} /> Online</span>
+  if (inv.channel === 'in_store') return <span className="inline-flex items-center gap-1 text-accent"><Store size={13} /> In store</span>
+  return <span className="text-ink-dim">—</span>
+}
+
 export default function CustomerHistoryPage() {
   const { customerId } = useParams()
+  const queryClient = useQueryClient()
   const [viewing, setViewing] = useState(null)
+  const [deleting, setDeleting] = useState(null)
 
   const { data: customer, isLoading: customerLoading, error: customerError, refetch } = useQuery({
     queryKey: ['customer', customerId],
@@ -31,6 +40,15 @@ export default function CustomerHistoryPage() {
     queryKey: ['customer-invoices', customerId],
     queryFn: () => apiGet(`/customers/${customerId}/invoices`),
   })
+  const deleteMutation = useMutation({
+    mutationFn: (invoiceId) => apiDelete(`/invoices/${invoiceId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-invoices', customerId] })
+      queryClient.invalidateQueries({ queryKey: ['customer', customerId] })
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      setDeleting(null)
+    },
+  })
 
   const columns = [
     {
@@ -38,6 +56,7 @@ export default function CustomerHistoryPage() {
       cell: (inv) => <span className="font-mono font-medium">{inv.invoiceNumber}</span>,
     },
     { header: 'Date', cell: (inv) => formatDate(inv.createdAt), className: 'text-ink-dim' },
+    { header: 'Channel', cell: channelLabel },
     {
       header: 'Items',
       cell: (inv) => (
@@ -60,13 +79,14 @@ export default function CustomerHistoryPage() {
     {
       header: '',
       cell: (inv) => (
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
           <button
             onClick={() => setViewing(inv)}
             className="flex items-center gap-1.5 rounded-lg border border-edge px-3 py-1.5 text-xs text-ink-dim hover:border-accent hover:text-accent"
           >
             <Eye size={13} /> View
           </button>
+          <button onClick={() => setDeleting(inv)} className="rounded-lg border border-danger/30 p-1.5 text-danger hover:bg-danger/10" aria-label={`Delete invoice ${inv.invoiceNumber}`} title="Delete invoice"><Trash2 size={14} /></button>
         </div>
       ),
     },
@@ -144,19 +164,17 @@ export default function CustomerHistoryPage() {
                     <span className="text-sm font-semibold">{formatINR(inv.total)}</span>
                   </div>
                   <div className="mt-0.5 text-xs text-ink-dim">
-                    {formatDate(inv.createdAt)} · {pcs} pcs
+                    {formatDate(inv.createdAt)} · {pcs} pcs · {channelLabel(inv)}
                   </div>
                   <div className="mt-1 truncate text-xs text-ink-dim">
                     {inv.items.map((item) => item.name).join(', ')}
                   </div>
                   {label && <div className="mt-1 text-xs text-accent">{label}</div>}
                   <div className="mt-3 flex justify-end border-t border-edge pt-2.5">
-                    <button
-                      onClick={() => setViewing(inv)}
-                      className="flex items-center gap-1.5 rounded-lg border border-edge px-3 py-1.5 text-xs text-ink-dim hover:border-accent hover:text-accent"
-                    >
-                      <Eye size={13} /> View invoice
-                    </button>
+                    <div className="flex gap-2">
+                      <button onClick={() => setViewing(inv)} className="flex items-center gap-1.5 rounded-lg border border-edge px-3 py-1.5 text-xs text-ink-dim hover:border-accent hover:text-accent"><Eye size={13} /> View invoice</button>
+                      <button onClick={() => setDeleting(inv)} className="rounded-lg border border-danger/30 p-1.5 text-danger hover:bg-danger/10" aria-label={`Delete invoice ${inv.invoiceNumber}`} title="Delete invoice"><Trash2 size={14} /></button>
+                    </div>
                   </div>
                 </li>
               )
@@ -173,6 +191,7 @@ export default function CustomerHistoryPage() {
       )}
 
       {viewing && <InvoicePrintModal invoice={viewing} isNew={false} onClose={() => setViewing(null)} />}
+      {deleting && <ConfirmDialog title="Delete invoice?" message={`Delete ${deleting.invoiceNumber}? This will remove the invoice and recalculate the customer's summary.`} onClose={() => deleteMutation.isPending ? null : setDeleting(null)} onConfirm={() => deleteMutation.mutate(deleting.id)} busy={deleteMutation.isPending} />}
     </div>
   )
 }
