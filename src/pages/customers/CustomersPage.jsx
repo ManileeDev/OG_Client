@@ -62,17 +62,6 @@ export default function CustomersPage() {
     customers.map((customer, index) => [customer.id, invoiceQueries[index]?.data ?? []]),
   )
 
-  const stats = useMemo(() => {
-    const revenue = customers.reduce((sum, c) => sum + c.totalSpent, 0)
-    const orders = customers.reduce((sum, c) => sum + c.orders, 0)
-    return {
-      total: customers.length,
-      revenue,
-      repeat: customers.filter((c) => c.orders > 1).length,
-      aov: orders > 0 ? revenue / orders : 0,
-    }
-  }, [customers])
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     const matchingCustomers = customers.filter((c) => {
@@ -98,6 +87,58 @@ export default function CustomersPage() {
       return new Date(b.lastPurchase || 0) - new Date(a.lastPurchase || 0)
     })
   }, [customers, search, fromDate, toDate, channel, sortBy, invoiceQueries])
+
+  const stats = useMemo(() => {
+    const hasInvoiceFilters = Boolean(fromDate || toDate || channel !== 'all')
+    const effectiveTo = toDate || (fromDate ? TODAY : '')
+    const scopedCustomers = customers.filter((customer) => {
+      if (!hasInvoiceFilters) return true
+      const invoices = invoicesByCustomer.get(customer.id) ?? []
+      const hasMatchingInvoice = invoices.some((invoice) => {
+        const purchaseDate = invoice.createdAt ? new Date(invoice.createdAt).toISOString().slice(0, 10) : ''
+        return (!fromDate || purchaseDate >= fromDate) &&
+          (!effectiveTo || purchaseDate <= effectiveTo) &&
+          (channel === 'all' || invoice.channel === channel)
+      })
+      if (hasMatchingInvoice) return true
+      const legacyDate = customer.lastPurchase ? new Date(customer.lastPurchase).toISOString().slice(0, 10) : ''
+      return !invoices.length && channel === 'all' &&
+        (!fromDate || legacyDate >= fromDate) && (!effectiveTo || legacyDate <= effectiveTo)
+    })
+    const scoped = scopedCustomers.reduce((result, customer) => {
+      if (!hasInvoiceFilters) {
+        result.orders += customer.orders
+        result.revenue += customer.totalSpent
+        return result
+      }
+
+      const matchingInvoices = (invoicesByCustomer.get(customer.id) ?? []).filter((invoice) => {
+        const purchaseDate = invoice.createdAt ? new Date(invoice.createdAt).toISOString().slice(0, 10) : ''
+        return (!fromDate || purchaseDate >= fromDate) &&
+          (!effectiveTo || purchaseDate <= effectiveTo) &&
+          (channel === 'all' || invoice.channel === channel)
+      })
+      result.orders += matchingInvoices.length
+      result.revenue += matchingInvoices.reduce((sum, invoice) => sum + invoice.total, 0)
+      return result
+    }, { orders: 0, revenue: 0 })
+
+    return {
+      total: scopedCustomers.length,
+      revenue: scoped.revenue,
+      repeat: scopedCustomers.filter((customer) => {
+        if (!hasInvoiceFilters) return customer.orders > 1
+        const effectiveTo = toDate || (fromDate ? TODAY : '')
+        return (invoicesByCustomer.get(customer.id) ?? []).filter((invoice) => {
+          const purchaseDate = invoice.createdAt ? new Date(invoice.createdAt).toISOString().slice(0, 10) : ''
+          return (!fromDate || purchaseDate >= fromDate) &&
+            (!effectiveTo || purchaseDate <= effectiveTo) &&
+            (channel === 'all' || invoice.channel === channel)
+        }).length > 1
+      }).length,
+      aov: scoped.orders > 0 ? scoped.revenue / scoped.orders : 0,
+    }
+  }, [customers, fromDate, toDate, channel, invoiceQueries])
 
   const columns = [
     {
