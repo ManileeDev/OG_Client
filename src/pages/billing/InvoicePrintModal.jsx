@@ -50,7 +50,7 @@ function whatsAppUrl(invoice) {
 const Divider = () => <div className="my-1.5 border-t border-dashed border-black" />
 
 const Row = ({ label, value, bold = false }) => (
-  <div className={`flex justify-between gap-2 ${bold ? 'text-[13px] font-bold' : ''}`}>
+  <div className={`flex justify-between gap-2 ${bold ? 'text-[13px] font-bold' : 'font-semibold'}`}>
     <span>{label}</span>
     <span className="shrink-0">{value}</span>
   </div>
@@ -61,9 +61,9 @@ const Row = ({ label, value, bold = false }) => (
 function InvoiceContent({ invoice }) {
   const totalQty = invoice.items.reduce((sum, item) => sum + item.qty, 0)
   return (
-    <div className="mx-auto w-[72mm] font-mono text-[11px] leading-relaxed text-black">
+    <div className="mx-auto w-[72mm] font-mono text-[11px] font-semibold leading-relaxed text-black">
       <div className="text-center">
-        <div className="text-[15px] font-bold tracking-widest">OG CLOTHING</div>
+        <div className="text-[15px] font-black tracking-widest">OG CLOTHING</div>
         <div>Menswear · Madurai, Tamil Nadu</div>
         <div>GSTIN: 33FJLPS0840H1Z3</div>
       </div>
@@ -77,7 +77,7 @@ function InvoiceContent({ invoice }) {
       <Row label="ITEM" value="AMOUNT" />
       {invoice.items.map((item) => (
         <div key={item.productId} className="mt-1">
-          <div className="font-semibold">
+          <div className="font-bold">
             {item.name}
             {item.sku ? ` [${item.sku}]` : ''}
           </div>
@@ -129,8 +129,8 @@ function InvoiceContent({ invoice }) {
 
       <Divider />
       <div className="text-center">
-        <div>Thank you for shopping with</div>
-        <div className="font-semibold">OG Clothing!</div>
+        <div className="font-semibold">Thank you for shopping with</div>
+        <div className="font-bold">OG Clothing!</div>
       </div>
     </div>
   )
