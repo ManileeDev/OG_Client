@@ -13,11 +13,35 @@ export function AuthProvider({ children }) {
     }
     window.addEventListener('auth:session-expired', handleSessionExpired)
 
-    apiGet('/auth/me')
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false))
+    const initAuth = async () => {
+      try {
+        const refreshToken = localStorage.getItem('og-refresh-token')
+        
+        // If we have a refresh token, try to refresh first to get a fresh access token
+        if (refreshToken) {
+          try {
+            const refreshed = await apiPost('/auth/refresh', { refreshToken })
+            localStorage.setItem('og-access-token', refreshed.accessToken)
+            localStorage.setItem('og-refresh-token', refreshed.refreshToken)
+          } catch {
+            // Refresh failed, clear tokens and let user login again
+            localStorage.removeItem('og-access-token')
+            localStorage.removeItem('og-refresh-token')
+            throw new Error('Refresh token expired')
+          }
+        }
+        
+        // Now fetch current user with fresh/valid access token
+        const currentUser = await apiGet('/auth/me')
+        setUser(currentUser)
+      } catch {
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
+    }
 
+    initAuth()
     return () => window.removeEventListener('auth:session-expired', handleSessionExpired)
   }, [])
 
