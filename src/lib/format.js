@@ -15,3 +15,17 @@ export const formatDate = (iso) => {
     year: 'numeric',
   })
 }
+
+export const formatTime = (iso) => {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
+
+export const formatDateTime = (iso) => {
+  if (!iso) return '—'
+  return `${formatDate(iso)} ${formatTime(iso)}`
+}

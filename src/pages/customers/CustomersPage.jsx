@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { UserRound, Wallet, Sparkles, TrendingUp, Trash2, SlidersHorizontal, ArrowUpDown } from 'lucide-react'
 import { apiDelete, apiGet } from '../../api/client'
-import { formatDate, formatINR } from '../../lib/format'
+import { formatDateTime, formatINR } from '../../lib/format'
 import PageHeader from '../../components/PageHeader'
 import StatCard from '../../components/StatCard'
 import SearchInput from '../../components/SearchInput'
@@ -163,7 +163,7 @@ export default function CustomersPage() {
     },
     { header: 'Orders', cell: (c) => c.orders },
     { header: 'Total Spent', cell: (c) => formatINR(c.totalSpent) },
-    { header: 'Last Purchase', cell: (c) => formatDate(c.lastPurchase), className: 'text-ink-dim' },
+    { header: 'Last Purchase', cell: (c) => formatDateTime(c.lastPurchase), className: 'text-ink-dim' },
     {
       header: '',
       cell: (c) => (
@@ -324,7 +324,7 @@ export default function CustomersPage() {
                       <span>
                         {c.orders} order{c.orders === 1 ? '' : 's'}
                       </span>
-                      <span>Last purchase: {formatDate(c.lastPurchase)}</span>
+                      <span>Last purchase: {formatDateTime(c.lastPurchase)}</span>
                     </div>
                     <button onClick={() => setDeleting(c)} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-danger/30 px-3 py-2 text-xs font-medium text-danger hover:bg-danger/10"><Trash2 size={13} /> Delete customer</button>
                   </li>

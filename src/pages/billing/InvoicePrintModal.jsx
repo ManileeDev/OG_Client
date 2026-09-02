@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import { Printer, CheckCircle2, MessageCircle } from 'lucide-react'
 import Modal from '../../components/Modal'
-import { formatDate, formatINR } from '../../lib/format'
+import { formatDateTime, formatINR } from '../../lib/format'
 
 const MODE_LABEL = { cash: 'Cash', upi: 'UPI', card: 'Card' }
 
@@ -16,7 +16,7 @@ function whatsAppUrl(invoice) {
     'We appreciate your trust in our brand. Good style gets noticed. Good quality gets remembered—we believe in both.',
     '',
     `Invoice ${invoice.invoiceNumber}`,
-    formatDate(invoice.createdAt),
+    formatDateTime(invoice.createdAt),
     
     '',
     ...invoice.items.map(
@@ -69,7 +69,7 @@ function InvoiceContent({ invoice }) {
       </div>
 
       <Divider />
-      <Row label={invoice.invoiceNumber} value={formatDate(invoice.createdAt)} />
+      <Row label={invoice.invoiceNumber} value={formatDateTime(invoice.createdAt)} />
       <div className="mt-1">Billed to: {invoice.customer.name}</div>
       <div>{invoice.customer.phone}</div>
 

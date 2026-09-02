@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ShoppingBag, Wallet, TrendingUp, CalendarDays, Eye, Trash2, Store, Wifi } from 'lucide-react'
 import { apiDelete, apiGet } from '../../api/client'
-import { formatDate, formatINR } from '../../lib/format'
+import { formatDateTime, formatINR } from '../../lib/format'
 import PageHeader from '../../components/PageHeader'
 import StatCard from '../../components/StatCard'
 import DataTable from '../../components/DataTable'
@@ -55,7 +55,7 @@ export default function CustomerHistoryPage() {
       header: 'Invoice',
       cell: (inv) => <span className="font-mono font-medium">{inv.invoiceNumber}</span>,
     },
-    { header: 'Date', cell: (inv) => formatDate(inv.createdAt), className: 'text-ink-dim' },
+    { header: 'Date', cell: (inv) => formatDateTime(inv.createdAt), className: 'text-ink-dim' },
     { header: 'Channel', cell: channelLabel },
     {
       header: 'Items',
@@ -127,7 +127,7 @@ export default function CustomerHistoryPage() {
           <StatCard icon={ShoppingBag} label="Total Orders" value={customer?.orders ?? 0} tone="amber" loading={customerLoading} />
           <StatCard icon={Wallet} label="Total Spent" value={formatINR(customer?.totalSpent)} tone="teal" loading={customerLoading} />
           <StatCard icon={TrendingUp} label="Avg. Order Value" value={formatINR(aov)} tone="violet" loading={customerLoading} />
-          <StatCard icon={CalendarDays} label="Last Purchase" value={formatDate(customer?.lastPurchase)} tone="pink" loading={customerLoading} />
+          <StatCard icon={CalendarDays} label="Last Purchase" value={formatDateTime(customer?.lastPurchase)} tone="pink" loading={customerLoading} />
         </div>
       </PageHeader>
 
@@ -164,7 +164,7 @@ export default function CustomerHistoryPage() {
                     <span className="text-sm font-semibold">{formatINR(inv.total)}</span>
                   </div>
                   <div className="mt-0.5 text-xs text-ink-dim">
-                    {formatDate(inv.createdAt)} · {pcs} pcs · {channelLabel(inv)}
+                    {formatDateTime(inv.createdAt)} · {pcs} pcs · {channelLabel(inv)}
                   </div>
                   <div className="mt-1 truncate text-xs text-ink-dim">
                     {inv.items.map((item) => item.name).join(', ')}
