@@ -5,6 +5,8 @@ const inr = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 2,
 })
 
+const INDIA_TIME_ZONE = 'Asia/Kolkata'
+
 export const formatINR = (n) => inr.format(n ?? 0)
 
 export const formatDate = (iso) => {
@@ -13,6 +15,7 @@ export const formatDate = (iso) => {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+    timeZone: INDIA_TIME_ZONE,
   })
 }
 
@@ -22,6 +25,7 @@ export const formatTime = (iso) => {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
+    timeZone: INDIA_TIME_ZONE,
   })
 }
 
