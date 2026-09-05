@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { UserRound, Wallet, Sparkles, TrendingUp, Trash2, SlidersHorizontal, ArrowUpDown } from 'lucide-react'
 import { apiDelete, apiGet } from '../../api/client'
-import { formatDateTime, formatINR } from '../../lib/format'
+import { formatDateKey, formatDateTime, formatINR } from '../../lib/format'
 import PageHeader from '../../components/PageHeader'
 import StatCard from '../../components/StatCard'
 import SearchInput from '../../components/SearchInput'
@@ -12,7 +12,7 @@ import ErrorState from '../../components/ErrorState'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import Select from '../../components/Select'
 
-const TODAY = new Date().toISOString().slice(0, 10)
+const TODAY = formatDateKey(new Date())
 const FILTER_INPUT = 'mt-1.5 w-full rounded-lg border border-edge bg-panel-2 px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-accent'
 
 export default function CustomersPage() {
@@ -51,15 +51,17 @@ export default function CustomersPage() {
     },
   })
 
-  const invoiceQueries = useQueries({
-    queries: customers.map((customer) => ({
-      queryKey: ['customer-invoices', customer.id],
-      queryFn: () => apiGet(`/customers/${customer.id}/invoices`),
-      staleTime: 60_000,
-    })),
+  const { data: allInvoices = [] } = useQuery({
+    queryKey: ['customer-invoices'],
+    queryFn: () => apiGet('/customers/invoices'),
+    staleTime: 60_000,
+    enabled: Boolean(fromDate || toDate || channel !== 'all'),
   })
   const invoicesByCustomer = new Map(
-    customers.map((customer, index) => [customer.id, invoiceQueries[index]?.data ?? []]),
+    customers.map((customer) => [
+      customer.id,
+      allInvoices.filter((invoice) => invoice.customer.phone === customer.phone),
+    ]),
   )
 
   const filtered = useMemo(() => {
@@ -68,14 +70,14 @@ export default function CustomersPage() {
       const matchesSearch = !q || c.name.toLowerCase().includes(q) || c.phone.includes(q)
       const invoices = invoicesByCustomer.get(c.id) ?? []
       const matchesInvoice = invoices.some((invoice) => {
-        const purchaseDate = invoice.createdAt ? new Date(invoice.createdAt).toISOString().slice(0, 10) : ''
+        const purchaseDate = formatDateKey(invoice.createdAt)
         const effectiveTo = toDate || (fromDate ? TODAY : '')
         const matchesDate = (!fromDate || purchaseDate >= fromDate) && (!effectiveTo || purchaseDate <= effectiveTo)
         const matchesChannel = channel === 'all' || invoice.channel === channel
         return matchesDate && matchesChannel
       })
       const hasFilters = Boolean(fromDate || toDate || channel !== 'all')
-      const legacyDate = c.lastPurchase ? new Date(c.lastPurchase).toISOString().slice(0, 10) : ''
+      const legacyDate = formatDateKey(c.lastPurchase)
       const effectiveTo = toDate || (fromDate ? TODAY : '')
       const matchesLegacy = !invoices.length && (!fromDate || legacyDate >= fromDate) && (!effectiveTo || legacyDate <= effectiveTo) && channel === 'all'
       return matchesSearch && (!hasFilters || matchesInvoice || matchesLegacy)
@@ -86,7 +88,7 @@ export default function CustomersPage() {
       if (sortBy === 'orders') return b.orders - a.orders
       return new Date(b.lastPurchase || 0) - new Date(a.lastPurchase || 0)
     })
-  }, [customers, search, fromDate, toDate, channel, sortBy, invoiceQueries])
+  }, [customers, allInvoices, search, fromDate, toDate, channel, sortBy])
 
   const stats = useMemo(() => {
     const hasInvoiceFilters = Boolean(fromDate || toDate || channel !== 'all')
@@ -95,13 +97,13 @@ export default function CustomersPage() {
       if (!hasInvoiceFilters) return true
       const invoices = invoicesByCustomer.get(customer.id) ?? []
       const hasMatchingInvoice = invoices.some((invoice) => {
-        const purchaseDate = invoice.createdAt ? new Date(invoice.createdAt).toISOString().slice(0, 10) : ''
+        const purchaseDate = formatDateKey(invoice.createdAt)
         return (!fromDate || purchaseDate >= fromDate) &&
           (!effectiveTo || purchaseDate <= effectiveTo) &&
           (channel === 'all' || invoice.channel === channel)
       })
       if (hasMatchingInvoice) return true
-      const legacyDate = customer.lastPurchase ? new Date(customer.lastPurchase).toISOString().slice(0, 10) : ''
+      const legacyDate = formatDateKey(customer.lastPurchase)
       return !invoices.length && channel === 'all' &&
         (!fromDate || legacyDate >= fromDate) && (!effectiveTo || legacyDate <= effectiveTo)
     })
@@ -113,7 +115,7 @@ export default function CustomersPage() {
       }
 
       const matchingInvoices = (invoicesByCustomer.get(customer.id) ?? []).filter((invoice) => {
-        const purchaseDate = invoice.createdAt ? new Date(invoice.createdAt).toISOString().slice(0, 10) : ''
+        const purchaseDate = formatDateKey(invoice.createdAt)
         return (!fromDate || purchaseDate >= fromDate) &&
           (!effectiveTo || purchaseDate <= effectiveTo) &&
           (channel === 'all' || invoice.channel === channel)
@@ -130,7 +132,7 @@ export default function CustomersPage() {
         if (!hasInvoiceFilters) return customer.orders > 1
         const effectiveTo = toDate || (fromDate ? TODAY : '')
         return (invoicesByCustomer.get(customer.id) ?? []).filter((invoice) => {
-          const purchaseDate = invoice.createdAt ? new Date(invoice.createdAt).toISOString().slice(0, 10) : ''
+          const purchaseDate = formatDateKey(invoice.createdAt)
           return (!fromDate || purchaseDate >= fromDate) &&
             (!effectiveTo || purchaseDate <= effectiveTo) &&
             (channel === 'all' || invoice.channel === channel)
@@ -138,7 +140,7 @@ export default function CustomersPage() {
       }).length,
       aov: scoped.orders > 0 ? scoped.revenue / scoped.orders : 0,
     }
-  }, [customers, fromDate, toDate, channel, invoiceQueries])
+  }, [customers, allInvoices, fromDate, toDate, channel])
 
   const columns = [
     {

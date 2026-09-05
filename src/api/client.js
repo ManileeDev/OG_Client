@@ -8,6 +8,26 @@ export class ApiError extends Error {
   }
 }
 
+let refreshPromise = null
+
+async function refreshSession(refreshToken) {
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new ApiError('Refresh token expired', res.status)
+        return res.json()
+      })
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+  return refreshPromise
+}
+
 async function request(path, options = {}, canRefresh = true) {
   let res
   try {
@@ -24,15 +44,12 @@ async function request(path, options = {}, canRefresh = true) {
   } catch {
     throw new ApiError('Could not reach the server', 0)
   }
-  if (res.status === 401 && canRefresh && !path.startsWith('/auth/')) {
+  const refreshAllowed = !['/auth/login', '/auth/refresh', '/auth/logout'].includes(path)
+  if (res.status === 401 && canRefresh && refreshAllowed) {
     const refreshToken = localStorage.getItem('og-refresh-token')
     if (refreshToken) {
       try {
-        const refreshed = await request(
-          '/auth/refresh',
-          { method: 'POST', body: JSON.stringify({ refreshToken }) },
-          false,
-        )
+        const refreshed = await refreshSession(refreshToken)
         localStorage.setItem('og-access-token', refreshed.accessToken)
         localStorage.setItem('og-refresh-token', refreshed.refreshToken)
         return request(path, options, false)

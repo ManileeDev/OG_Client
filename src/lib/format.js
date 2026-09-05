@@ -19,6 +19,13 @@ export const formatDate = (iso) => {
   })
 }
 
+export const formatDateKey = (iso) => {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-CA', {
+    timeZone: INDIA_TIME_ZONE,
+  })
+}
+
 export const formatTime = (iso) => {
   if (!iso) return '—'
   return new Date(iso).toLocaleTimeString('en-GB', {
